@@ -109,6 +109,8 @@ int main(int argc, char** argv)
     QueryPerformanceCounter(&large_last_time);
     u64 last_time = large_last_time.QuadPart;
     
+    UNUSED_VAR(delta_time);
+
     // NOTE: backbuffer for tgui to draw all the elements
     TGuiBackbuffer tgui_backbuffer = {0};
     tgui_backbuffer.width = WINDOW_WIDTH;
@@ -119,10 +121,11 @@ int main(int argc, char** argv)
     // NOTE: load bitmap test
     TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/test.bmp");
     UNUSED_VAR(test_bitmap);
-
-    f32 pos_x = (tgui_backbuffer.width / 2) - 0.5f*test_bitmap.width;
-    f32 pos_y = -0.5f*test_bitmap.height;
-    f32 angle = 0;
+    
+    i32 dim_x = 200;
+    i32 dim_y = 500;
+    f32 pos_x = (tgui_backbuffer.width / 2) - 0.5f * dim_x;
+    f32 pos_y = (tgui_backbuffer.height / 2) - 0.5f * dim_y;
 
     while(global_running)
     {
@@ -149,10 +152,7 @@ int main(int argc, char** argv)
         // NOTE: clear the screen
         tgui_clear_backbuffer(&tgui_backbuffer);
 
-        pos_x += cosf(angle)*15;
-        pos_y += sinf(angle)*15;
-        angle += 1.0f * delta_time;
-        tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, pos_x, pos_y);
+        tgui_draw_size_bitmap(&tgui_backbuffer, &test_bitmap, dim_x, dim_y, pos_x, pos_y);
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

@@ -52,7 +52,6 @@ TGuiBitmap tgui_debug_load_bmp(char *path)
         bmp_header.compression = READ_U32(temp_bmp_data);
         bmp_header.bmp_size = READ_U32(temp_bmp_data);
     
-        // TODO: Copy the pixels into the TGuiBitmap
         // NOTE: for now only allow 32bits bitmaps
         u32 bytes_per_pixel = bmp_header.bits_per_pixel / 8;
         if(bytes_per_pixel != sizeof(u32))
@@ -62,13 +61,27 @@ TGuiBitmap tgui_debug_load_bmp(char *path)
         }
 
         u8 *bmp_src = (u8 *)bmp_data + bmp_header.pixel_array_offset;
-        
         TGuiBitmap result = {0};
         result.width = bmp_header.width;
         result.height = bmp_header.height;
         u64 bitmap_size = result.width * result.height * bytes_per_pixel;
         result.pixels = (u32 *)malloc(bitmap_size); 
-        memcpy(result.pixels, bmp_src, bitmap_size);
+        
+        // NOTE: cannot use memcpy, the bitmap must be flipped 
+        // TODO: copy the bitmap pixels in a faster way
+        u32 *src_row = (u32 *)bmp_src + (result.height-1) * bmp_header.width;
+        u32 *dst_row = result.pixels;
+        for(u32 y = 0; y < result.height; ++y)
+        {
+            u32 *src_pixels = src_row;
+            u32 *dst_pixels = dst_row;
+            for(u32 x = 0; x < result.width; ++x)
+            {
+                *dst_pixels++ = *src_pixels++;
+            }
+            src_row -= bmp_header.width;
+            dst_row += result.width;
+        }
         
         free(bmp_data);
         return result;
@@ -129,12 +142,12 @@ void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x,
 
 void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y)
 {
+    // TODO: Implment alpha bending
     i32 min_x = x;
     i32 min_y = y;
     i32 max_x = min_x + bitmap->width;
     i32 max_y = min_y + bitmap->height;
      
-    // TODO: clip the bitmap to screen boundaries
     u32 offset_x = 0;
     u32 offset_y = 0;
     if(min_x < 0)
@@ -171,5 +184,54 @@ void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32
         }
         row += backbuffer->pitch;
         bmp_row += bitmap->width;
+    }
+}
+
+void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width, i32 height, i32 x, i32 y)
+{
+
+    // TODO: Implment alpha bending
+    i32 min_x = x;
+    i32 min_y = y;
+    i32 max_x = min_x + width;
+    i32 max_y = min_y + height;
+     
+    u32 offset_x = 0;
+    u32 offset_y = 0;
+    if(min_x < 0)
+    {
+        offset_x = -min_x;
+        min_x = 0;
+    }
+    else if(max_x > (i32)backbuffer->width)
+    {
+        max_x = backbuffer->width;
+    }
+    if(min_y < 0)
+    {
+        offset_y = -min_y;
+        min_y = 0;
+    }
+    else if(max_y > (i32)backbuffer->height)
+    {
+        max_y = backbuffer->height;
+    }
+    
+    i32 dest_width = max_x - min_x;
+    i32 dest_height = max_y - min_y;
+
+    u8 *row = (u8 *)backbuffer->data + min_y * backbuffer->pitch;
+    for(i32 y = 0; y < dest_height; ++y)
+    {
+        f32 ratio_y = (f32)(y + offset_y) / (f32)height;
+        i32 bitmap_y = bitmap->height * ratio_y;
+        u32 *pixels = (u32 *)row + min_x;
+        for(i32 x = 0; x < dest_width; ++x)
+        {
+            f32 ratio_x = (f32)(x + offset_x) / (f32)width;
+            i32 bitmap_x = bitmap->width * ratio_x;
+            *pixels++ = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
+        }
+        row += backbuffer->pitch;
     }
 }
