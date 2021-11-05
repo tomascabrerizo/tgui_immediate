@@ -122,10 +122,10 @@ int main(int argc, char** argv)
     TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/test.bmp");
     UNUSED_VAR(test_bitmap);
     
-    i32 dim_x = 400;
-    i32 dim_y = 800;
-    f32 pos_x = (tgui_backbuffer.width / 2) - 0.5f * dim_x;
-    f32 pos_y = (tgui_backbuffer.height / 2) - 0.5f * dim_y;
+    //i32 dim_x = 200;
+    //i32 dim_y = 800;
+    //f32 pos_x = (tgui_backbuffer.width / 2) - 0.5f * dim_x;
+    //f32 pos_y = (tgui_backbuffer.height / 2) - 0.5f * dim_y;
 
     while(global_running)
     {
@@ -151,8 +151,10 @@ int main(int argc, char** argv)
         
         // NOTE: clear the screen
         tgui_clear_backbuffer(&tgui_backbuffer);
-
-        tgui_draw_size_bitmap(&tgui_backbuffer, &test_bitmap, dim_x, dim_y, pos_x, pos_y);
+        
+        TGuiRect src_rect = {60, 10, 160, 120};
+        TGuiRect dest_rect = {124, 124, 524, 324};
+        tgui_draw_rect_bitmap(&tgui_backbuffer, &test_bitmap, src_rect, dest_rect);
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

@@ -46,9 +46,18 @@ typedef struct TGuiBitmap
 TGuiBitmap tgui_debug_load_bmp(char *path);
 void tgui_debug_free_bmp(TGuiBitmap *bitmap);
 
+typedef struct TGuiRect
+{
+    i32 x;
+    i32 y;
+    i32 w;
+    i32 h;
+} TGuiRect;
+
 TGUI_API void tgui_clear_backbuffer(TGuiBackbuffer *backbuffer);
 TGUI_API void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, u32 color);
 TGUI_API void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y);
 TGUI_API void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width, i32 height, i32 x, i32 y);
+TGUI_API void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest);
 
 #endif // TGUI_WIN32_H

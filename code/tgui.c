@@ -236,3 +236,82 @@ void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 w
         row += backbuffer->pitch;
     }
 }
+
+void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest)
+{
+    // TODO: Implment alpha bending
+    // TODO: Implment filtering for the re-scale bitmap
+    i32 min_x = dest.x;
+    i32 min_y = dest.y;
+    i32 max_x = min_x + dest.w;
+    i32 max_y = min_y + dest.h;
+     
+    u32 offset_x = 0;
+    u32 offset_y = 0;
+    if(min_x < 0)
+    {
+        offset_x = -min_x;
+        min_x = 0;
+    }
+    if(max_x > (i32)backbuffer->width)
+    {
+        max_x = backbuffer->width;
+    }
+    if(min_y < 0)
+    {
+        offset_y = -min_y;
+        min_y = 0;
+    }
+    if(max_y > (i32)backbuffer->height)
+    {
+        max_y = backbuffer->height;
+    }
+
+    // NOTE: clip src rect to the bitmap
+    i32 src_min_x = src.x;
+    i32 src_min_y = src.y;
+    i32 src_max_x = src_min_x + src.w;
+    i32 src_max_y = src_min_y + src.h;
+     
+    u32 src_offset_x = 0;
+    u32 src_offset_y = 0;
+    if(src_min_x < 0)
+    {
+        src_offset_x = -src_min_x;
+        src_min_x = 0;
+    }
+    if(src_max_x > (i32)bitmap->width)
+    {
+        src_max_x = bitmap->width;
+    }
+    if(src_min_y < 0)
+    {
+        src_offset_y = -src_min_y;
+        src_min_y = 0;
+    }
+    if(src_max_y > (i32)bitmap->height)
+    {
+        src_max_y = bitmap->height;
+    }
+    
+    i32 dest_width = max_x - min_x;
+    i32 dest_height = max_y - min_y;
+    i32 src_width = src_max_x - src_min_x;
+    i32 src_height = src_max_y - src_min_y;
+
+    u8 *row = (u8 *)backbuffer->data + min_y * backbuffer->pitch;
+    for(i32 y = 0; y < dest_height; ++y)
+    {
+        f32 ratio_y = (f32)(y + offset_y) / (f32)dest.h;
+        i32 bitmap_y = src_min_y + (src_height * ratio_y);
+        u32 *pixels = (u32 *)row + min_x;
+        for(i32 x = 0; x < dest_width; ++x)
+        {
+            f32 ratio_x = (f32)(x + offset_x) / (f32)dest.w;
+            i32 bitmap_x = src_min_x + (src_width * ratio_x);
+            *pixels++ = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
+        }
+        row += backbuffer->pitch;
+    }
+}
+
