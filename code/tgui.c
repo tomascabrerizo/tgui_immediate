@@ -112,7 +112,7 @@ void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x,
     {
         min_x = 0;
     }
-    else if(max_x > (i32)backbuffer->width)
+    if(max_x > (i32)backbuffer->width)
     {
         max_x = backbuffer->width;
     }
@@ -120,7 +120,7 @@ void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x,
     {
         min_y = 0;
     }
-    else if(max_y > (i32)backbuffer->height)
+    if(max_y > (i32)backbuffer->height)
     {
         max_y = backbuffer->height;
     }
@@ -155,7 +155,7 @@ void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32
         offset_x = -min_x;
         min_x = 0;
     }
-    else if(max_x > (i32)backbuffer->width)
+    if(max_x > (i32)backbuffer->width)
     {
         max_x = backbuffer->width;
     }
@@ -164,7 +164,7 @@ void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32
         offset_y = -min_y;
         min_y = 0;
     }
-    else if(max_y > (i32)backbuffer->height)
+    if(max_y > (i32)backbuffer->height)
     {
         max_y = backbuffer->height;
     }
@@ -191,6 +191,7 @@ void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 w
 {
 
     // TODO: Implment alpha bending
+    // TODO: Implment filtering for the re-scale bitmap
     i32 min_x = x;
     i32 min_y = y;
     i32 max_x = min_x + width;
@@ -203,7 +204,7 @@ void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 w
         offset_x = -min_x;
         min_x = 0;
     }
-    else if(max_x > (i32)backbuffer->width)
+    if(max_x > (i32)backbuffer->width)
     {
         max_x = backbuffer->width;
     }
@@ -212,7 +213,7 @@ void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 w
         offset_y = -min_y;
         min_y = 0;
     }
-    else if(max_y > (i32)backbuffer->height)
+    if(max_y > (i32)backbuffer->height)
     {
         max_y = backbuffer->height;
     }

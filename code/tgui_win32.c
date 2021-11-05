@@ -122,8 +122,8 @@ int main(int argc, char** argv)
     TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/test.bmp");
     UNUSED_VAR(test_bitmap);
     
-    i32 dim_x = 200;
-    i32 dim_y = 500;
+    i32 dim_x = 400;
+    i32 dim_y = 800;
     f32 pos_x = (tgui_backbuffer.width / 2) - 0.5f * dim_x;
     f32 pos_y = (tgui_backbuffer.height / 2) - 0.5f * dim_y;
 
