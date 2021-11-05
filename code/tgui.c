@@ -133,17 +133,39 @@ void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32
     i32 min_y = y;
     i32 max_x = min_x + bitmap->width;
     i32 max_y = min_y + bitmap->height;
-    
-    UNUSED_VAR(max_x);
-    UNUSED_VAR(max_y);
+     
+    // TODO: clip the bitmap to screen boundaries
+    u32 offset_x = 0;
+    u32 offset_y = 0;
+    if(min_x < 0)
+    {
+        offset_x = -min_x;
+        min_x = 0;
+    }
+    else if(max_x > (i32)backbuffer->width)
+    {
+        max_x = backbuffer->width;
+    }
+    if(min_y < 0)
+    {
+        offset_y = -min_y;
+        min_y = 0;
+    }
+    else if(max_y > (i32)backbuffer->height)
+    {
+        max_y = backbuffer->height;
+    }
+
+    i32 width = max_x - min_x;
+    i32 height = max_y - min_y;
 
     u8 *row = (u8 *)backbuffer->data + min_y * backbuffer->pitch;
-    u32 *bmp_row = bitmap->pixels;
-    for(u32 y = 0; y < bitmap->height; ++y)
+    u32 *bmp_row = bitmap->pixels + offset_y * bitmap->width;
+    for(i32 y = 0; y < height; ++y)
     {
         u32 *pixels = (u32 *)row + min_x;
-        u32 *bmp_pixels = bmp_row;
-        for(u32 x = 0; x < bitmap->width; ++x)
+        u32 *bmp_pixels = bmp_row + offset_x;
+        for(i32 x = 0; x < width; ++x)
         {
             *pixels++ = *bmp_pixels++;
         }
