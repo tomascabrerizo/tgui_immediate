@@ -5,6 +5,54 @@
 #include <stdlib.h>
 #include <string.h>
 
+// NOTE: core lib functions
+void tgui_init(void)
+{
+    TGuiState *state = &tgui_global_state;
+    state->event_queue_count = 0;
+}
+
+void tgui_update(void)
+{
+    TGuiState *state = &tgui_global_state;
+    // NOTE: pull tgui events from the queue
+    for(u32 event_index = 0; event_index < state->event_queue_count; ++event_index)
+    {
+        TGuiEvent *event = state->event_queue + event_index;
+        switch(event->type)
+        {
+            case TGUI_EVENT_KEYDOWN:
+            {
+                printf("key down event!\n");  
+            } break;
+            case TGUI_EVENT_KEYUP:
+            {
+                printf("key up event!\n");  
+            } break;
+            case TGUI_EVENT_MOUSEMOVE:
+            {
+                TGuiEventMouseMove *mouse = (TGuiEventMouseMove *)event;
+                state->mouse_x = mouse->pos_x;
+                state->mouse_y = mouse->pos_y;
+            } break;
+            default:
+            {
+                ASSERT(!"invalid code path");
+            } break;
+        }
+    }
+    state->event_queue_count = 0;
+}
+
+void tgui_push_event(TGuiEvent event)
+{
+    TGuiState *state = &tgui_global_state;
+    if(state->event_queue_count < TGUI_EVENT_QUEUE_MAX)
+    {
+        state->event_queue[state->event_queue_count++] = event;
+    }
+}
+
 // NOTE: DEBUG functions
 
 // NOTE: only use in implementation
@@ -264,7 +312,7 @@ void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, T
     }
 }
 
-void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width, i32 height, i32 x, i32 y)
+void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y, i32 width, i32 height)
 {
     TGuiRect src = (TGuiRect){0, 0, bitmap->width, bitmap->height};
     TGuiRect dest = (TGuiRect){x, y, width, height};
@@ -272,6 +320,20 @@ void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width,
 }
 
 // NOTE: font funtions
+
+TGuiFont tgui_create_font(TGuiBitmap *bitmap, u32 char_width, u32 char_height, u32 num_rows, u32 num_cols)
+{
+    TGuiFont result = {0};
+    result.src_rect.x = 0;
+    result.src_rect.y = 0;
+    result.src_rect.width = char_width;
+    result.src_rect.height = char_height;
+    result.num_rows = num_rows;
+    result.num_cols = num_cols;
+    result.bitmap = bitmap;
+    return result;
+}
+
 void tgui_draw_char(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char character)
 {
     ASSERT(font->bitmap && "font must have a bitmap");

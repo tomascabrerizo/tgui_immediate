@@ -61,6 +61,46 @@ typedef struct TGuiFont
     // maybe remove them
 } TGuiFont;
 
+typedef enum TGuiEventType
+{
+    TGUI_EVENT_MOUSEMOVE,
+    TGUI_EVENT_KEYDOWN,
+    TGUI_EVENT_KEYUP,
+
+    TGUI_EVENT_COUNT,
+} TGuiEventType;
+
+typedef struct TGuiEventMouseMove
+{
+    TGuiEventType type;
+    i32 pos_x;
+    i32 pos_y;
+} TGuiEventMouseMove;
+
+typedef union TGuiEvent
+{
+    TGuiEventType type;
+    TGuiEventMouseMove mouse;
+} TGuiEvent;
+
+#define TGUI_EVENT_QUEUE_MAX 128
+typedef struct TGuiState
+{
+    TGuiEvent event_queue[TGUI_EVENT_QUEUE_MAX];
+    u32 event_queue_count;
+
+    i32 mouse_x;
+    i32 mouse_y;
+        
+} TGuiState;
+// NOTE: global state (stores all internal state of the GUI)
+static TGuiState tgui_global_state;
+
+// NOTE: core lib functions
+TGUI_API void tgui_init(void);
+TGUI_API void tgui_update(void);
+TGUI_API void tgui_push_event(TGuiEvent event);
+
 // NOTE: DEBUG function
 TGuiBitmap tgui_debug_load_bmp(char *path);
 void tgui_debug_free_bmp(TGuiBitmap *bitmap);
@@ -69,12 +109,13 @@ void tgui_debug_free_bmp(TGuiBitmap *bitmap);
 TGUI_API void tgui_clear_backbuffer(TGuiBackbuffer *backbuffer);
 TGUI_API void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, u32 color);
 TGUI_API void tgui_copy_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y);
-TGUI_API void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width, i32 height, i32 x, i32 y);
+TGUI_API void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y, i32 width, i32 height);
 TGUI_API void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest);
 
 // NOTE: font funtions
 // TODO: stop using char * (null terminated string) create custom string_view like struct
 // NOTE: height is in pixels
+TGUI_API TGuiFont tgui_create_font(TGuiBitmap *bitmap, u32 char_width, u32 char_height, u32 num_rows, u32 num_cols);
 TGUI_API void tgui_draw_char(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char character);
 TGUI_API void tgui_draw_text(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char *text);
 

@@ -52,7 +52,15 @@ static LRESULT win32_window_proc(HWND window, UINT message, WPARAM w_param, LPAR
         }break;
         case WM_KEYUP:
         {
-        }
+        }break;
+        case WM_MOUSEMOVE:
+        {
+            TGuiEventMouseMove mouse_event = {0};
+            mouse_event.type = TGUI_EVENT_MOUSEMOVE;
+            mouse_event.pos_x = LOWORD(l_param);
+            mouse_event.pos_y = HIWORD(l_param);
+            tgui_push_event((TGuiEvent)mouse_event);
+        }break;
         default:
         {
             result = DefWindowProcA(window, message, w_param, l_param);
@@ -110,6 +118,9 @@ int main(int argc, char** argv)
     u64 last_time = large_last_time.QuadPart;
     
     UNUSED_VAR(delta_time);
+    
+    // NOTE: init TGUI lib
+    tgui_init();
 
     // NOTE: backbuffer for tgui to draw all the elements
     TGuiBackbuffer tgui_backbuffer = {0};
@@ -118,18 +129,10 @@ int main(int argc, char** argv)
     tgui_backbuffer.pitch = WINDOW_WIDTH * sizeof(u32);
     tgui_backbuffer.data = global_backbuffer_data;
     
-    // NOTE: load bitmap test
+    // NOTE: load bitmap for testing
     TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/font.bmp");
-    // TODO: easier way to create a font (create a funtion)
-    // NOTE: create font test
-    TGuiFont test_font = {0};
-    test_font.src_rect.x = 0;
-    test_font.src_rect.y = 0;
-    test_font.src_rect.width = 7;
-    test_font.src_rect.height = 9;
-    test_font.num_rows = 18;
-    test_font.num_cols = 6;
-    test_font.bitmap = &test_bitmap;
+    // NOTE: create a font for testing 
+    TGuiFont test_font = tgui_create_font(&test_bitmap, 7, 9, 18, 6);
     
     while(global_running)
     {
@@ -153,15 +156,17 @@ int main(int argc, char** argv)
             DispatchMessageA(&message);
         }
         
+        // NOTE: Update TGUI lib
+        tgui_update();
+
         // NOTE: clear the screen
         tgui_clear_backbuffer(&tgui_backbuffer);
         
-        TGuiRect src_rect = {0, 0, test_bitmap.width, test_bitmap.height};
-        TGuiRect dest_rect = {0, 0, 128, 64};
-        tgui_draw_src_dest_bitmap(&tgui_backbuffer, &test_bitmap, src_rect, dest_rect);
+        char mouse_position_str[256];
+        sprintf(mouse_position_str, "mouse pos: (x: %d, y: %d)", tgui_global_state.mouse_x, tgui_global_state.mouse_y);
 
-        tgui_draw_text(&tgui_backbuffer, &test_font, 27, 40, 300, "@tomascabrerizo");
-
+        tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, 0, 0, test_bitmap.width, test_bitmap.height);
+        tgui_draw_text(&tgui_backbuffer, &test_font, 27, 40, 300, mouse_position_str);
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);
