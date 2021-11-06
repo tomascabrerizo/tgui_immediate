@@ -119,14 +119,18 @@ int main(int argc, char** argv)
     tgui_backbuffer.data = global_backbuffer_data;
     
     // NOTE: load bitmap test
-    TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/test.bmp");
-    UNUSED_VAR(test_bitmap);
+    TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/font.bmp");
+    // TODO: easier way to create a font (create a funtion)
+    // NOTE: create font test
+    TGuiFont test_font = {0};
+    test_font.src_rect.x = 0;
+    test_font.src_rect.y = 0;
+    test_font.src_rect.width = 7;
+    test_font.src_rect.height = 9;
+    test_font.num_rows = 18;
+    test_font.num_cols = 6;
+    test_font.bitmap = &test_bitmap;
     
-    //i32 dim_x = 200;
-    //i32 dim_y = 800;
-    //f32 pos_x = (tgui_backbuffer.width / 2) - 0.5f * dim_x;
-    //f32 pos_y = (tgui_backbuffer.height / 2) - 0.5f * dim_y;
-
     while(global_running)
     {
         LARGE_INTEGER large_current_time;
@@ -152,9 +156,12 @@ int main(int argc, char** argv)
         // NOTE: clear the screen
         tgui_clear_backbuffer(&tgui_backbuffer);
         
-        TGuiRect src_rect = {60, 10, 160, 120};
-        TGuiRect dest_rect = {124, 124, 524, 324};
-        tgui_draw_rect_bitmap(&tgui_backbuffer, &test_bitmap, src_rect, dest_rect);
+        TGuiRect src_rect = {0, 0, test_bitmap.width, test_bitmap.height};
+        TGuiRect dest_rect = {0, 0, 128, 64};
+        tgui_draw_src_dest_bitmap(&tgui_backbuffer, &test_bitmap, src_rect, dest_rect);
+
+        tgui_draw_text(&tgui_backbuffer, &test_font, 27, 40, 300, "@tomascabrerizo");
+
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

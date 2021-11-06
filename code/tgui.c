@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// NOTE: DEBUG functions
+
 // NOTE: only use in implementation
 typedef struct TGuiBmpHeader
 {
@@ -106,6 +108,8 @@ void tgui_clear_backbuffer(TGuiBackbuffer *backbuffer)
     memset(backbuffer->data, 0, backbuffer_size);
 }
 
+// NOTE: simple rendering API
+
 void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x, i32 max_y, u32 color)
 {
     if(min_x < 0)
@@ -140,9 +144,8 @@ void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i32 max_x,
     }
 }
 
-void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y)
+void tgui_copy_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y)
 {
-    // TODO: Implment alpha bending
     i32 min_x = x;
     i32 min_y = y;
     i32 max_x = min_x + bitmap->width;
@@ -187,64 +190,14 @@ void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32
     }
 }
 
-void tgui_draw_size_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width, i32 height, i32 x, i32 y)
-{
-
-    // TODO: Implment alpha bending
-    // TODO: Implment filtering for the re-scale bitmap
-    i32 min_x = x;
-    i32 min_y = y;
-    i32 max_x = min_x + width;
-    i32 max_y = min_y + height;
-     
-    u32 offset_x = 0;
-    u32 offset_y = 0;
-    if(min_x < 0)
-    {
-        offset_x = -min_x;
-        min_x = 0;
-    }
-    if(max_x > (i32)backbuffer->width)
-    {
-        max_x = backbuffer->width;
-    }
-    if(min_y < 0)
-    {
-        offset_y = -min_y;
-        min_y = 0;
-    }
-    if(max_y > (i32)backbuffer->height)
-    {
-        max_y = backbuffer->height;
-    }
-    
-    i32 dest_width = max_x - min_x;
-    i32 dest_height = max_y - min_y;
-
-    u8 *row = (u8 *)backbuffer->data + min_y * backbuffer->pitch;
-    for(i32 y = 0; y < dest_height; ++y)
-    {
-        f32 ratio_y = (f32)(y + offset_y) / (f32)height;
-        i32 bitmap_y = bitmap->height * ratio_y;
-        u32 *pixels = (u32 *)row + min_x;
-        for(i32 x = 0; x < dest_width; ++x)
-        {
-            f32 ratio_x = (f32)(x + offset_x) / (f32)width;
-            i32 bitmap_x = bitmap->width * ratio_x;
-            *pixels++ = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
-        }
-        row += backbuffer->pitch;
-    }
-}
-
-void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest)
+void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest)
 {
     // TODO: Implment alpha bending
     // TODO: Implment filtering for the re-scale bitmap
     i32 min_x = dest.x;
     i32 min_y = dest.y;
-    i32 max_x = min_x + dest.w;
-    i32 max_y = min_y + dest.h;
+    i32 max_x = min_x + dest.width;
+    i32 max_y = min_y + dest.height;
      
     u32 offset_x = 0;
     u32 offset_y = 0;
@@ -270,14 +223,11 @@ void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiR
     // NOTE: clip src rect to the bitmap
     i32 src_min_x = src.x;
     i32 src_min_y = src.y;
-    i32 src_max_x = src_min_x + src.w;
-    i32 src_max_y = src_min_y + src.h;
+    i32 src_max_x = src_min_x + src.width;
+    i32 src_max_y = src_min_y + src.height;
      
-    u32 src_offset_x = 0;
-    u32 src_offset_y = 0;
     if(src_min_x < 0)
     {
-        src_offset_x = -src_min_x;
         src_min_x = 0;
     }
     if(src_max_x > (i32)bitmap->width)
@@ -286,7 +236,6 @@ void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiR
     }
     if(src_min_y < 0)
     {
-        src_offset_y = -src_min_y;
         src_min_y = 0;
     }
     if(src_max_y > (i32)bitmap->height)
@@ -302,12 +251,12 @@ void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiR
     u8 *row = (u8 *)backbuffer->data + min_y * backbuffer->pitch;
     for(i32 y = 0; y < dest_height; ++y)
     {
-        f32 ratio_y = (f32)(y + offset_y) / (f32)dest.h;
+        f32 ratio_y = (f32)(y + offset_y) / (f32)dest.height;
         i32 bitmap_y = src_min_y + (src_height * ratio_y);
         u32 *pixels = (u32 *)row + min_x;
         for(i32 x = 0; x < dest_width; ++x)
         {
-            f32 ratio_x = (f32)(x + offset_x) / (f32)dest.w;
+            f32 ratio_x = (f32)(x + offset_x) / (f32)dest.width;
             i32 bitmap_x = src_min_x + (src_width * ratio_x);
             *pixels++ = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
         }
@@ -315,3 +264,41 @@ void tgui_draw_rect_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiR
     }
 }
 
+void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 width, i32 height, i32 x, i32 y)
+{
+    TGuiRect src = (TGuiRect){0, 0, bitmap->width, bitmap->height};
+    TGuiRect dest = (TGuiRect){x, y, width, height};
+    tgui_draw_src_dest_bitmap(backbuffer, bitmap, src, dest);
+}
+
+// NOTE: font funtions
+void tgui_draw_char(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char character)
+{
+    ASSERT(font->bitmap && "font must have a bitmap");
+    u32 index = (character - ' ');
+    u32 x_index = index % font->num_rows;
+    u32 y_index = index / font->num_rows;
+    TGuiRect src = (TGuiRect){
+        x_index*font->src_rect.width, 
+        y_index*font->src_rect.height, 
+        font->src_rect.width, 
+        font->src_rect.height
+    };
+    f32 w_ration = (f32)font->src_rect.width / (f32)font->src_rect.height;
+    TGuiRect dest = (TGuiRect){x, y, (w_ration * (f32)height + 0.5f), height};
+    tgui_draw_src_dest_bitmap(backbuffer, font->bitmap, src, dest); 
+}
+
+void tgui_draw_text(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char *text)
+{
+    // TODO: the w_ratio is been calculated in two time
+    f32 w_ration = (f32)font->src_rect.width / (f32)font->src_rect.height;
+    u32 width = (u32)(w_ration * (f32)height + 0.5f);
+     
+    u32 legth = strlen((const char *)text);
+    for(u32 index = 0; index < legth; ++index)
+    {
+        tgui_draw_char(backbuffer, font, height, x, y, text[index]);
+        x += width;
+    }
+}
