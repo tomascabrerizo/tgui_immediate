@@ -57,8 +57,8 @@ static LRESULT win32_window_proc(HWND window, UINT message, WPARAM w_param, LPAR
         {
             TGuiEventMouseMove mouse_event = {0};
             mouse_event.type = TGUI_EVENT_MOUSEMOVE;
-            mouse_event.pos_x = LOWORD(l_param);
-            mouse_event.pos_y = HIWORD(l_param);
+            mouse_event.pos_x = (i16)LOWORD(l_param);
+            mouse_event.pos_y = (i16)HIWORD(l_param);
             tgui_push_event((TGuiEvent)mouse_event);
         }break;
         default:
@@ -146,8 +146,10 @@ int main(int argc, char** argv)
             i32 ms_to_sleep = ms_per_frame - current_ms_per_frame;
             Sleep(ms_to_sleep);
         }
-        QueryPerformanceCounter(&large_last_time);
-        last_time = large_last_time.QuadPart;
+        QueryPerformanceCounter(&large_current_time);
+        current_time = large_current_time.QuadPart;
+        u32 current_fps = 1.0f / ((f32)(current_time - last_time) / (f32)large_frequency.QuadPart);
+        last_time = current_time;
 
         MSG message;
         while(PeekMessageA(&message, window, 0, 0, PM_REMOVE))
@@ -162,11 +164,15 @@ int main(int argc, char** argv)
         // NOTE: clear the screen
         tgui_clear_backbuffer(&tgui_backbuffer);
         
-        char mouse_position_str[256];
-        sprintf(mouse_position_str, "mouse pos: (x: %d, y: %d)", tgui_global_state.mouse_x, tgui_global_state.mouse_y);
+        char debug_str[256];
+        u32 font_height = 18;
+        sprintf(debug_str, "mouse pos (x:%d, y:%d)", tgui_global_state.mouse_x, tgui_global_state.mouse_y);
+        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, tgui_backbuffer.height - font_height, debug_str);
+        
+        sprintf(debug_str, "FPS:%d", current_fps);
+        tgui_draw_text(&tgui_backbuffer, &test_font, 9, 0, 0, debug_str);
 
-        tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, 0, 0, test_bitmap.width, test_bitmap.height);
-        tgui_draw_text(&tgui_backbuffer, &test_font, 27, 40, 300, mouse_position_str);
+        tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);
