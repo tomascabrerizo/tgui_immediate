@@ -300,12 +300,12 @@ void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, T
     for(i32 y = 0; y < dest_height; ++y)
     {
         f32 ratio_y = (f32)(y + offset_y) / (f32)dest.height;
-        i32 bitmap_y = src_min_y + (src_height * ratio_y);
+        u32 bitmap_y = src_min_y + (u32)((f32)src_height * ratio_y + 0.5f);
         u32 *pixels = (u32 *)row + min_x;
         for(i32 x = 0; x < dest_width; ++x)
         {
             f32 ratio_x = (f32)(x + offset_x) / (f32)dest.width;
-            i32 bitmap_x = src_min_x + (src_width * ratio_x);
+            u32 bitmap_x = src_min_x + (u32)((f32)src_width * ratio_x + 0.5f);
             *pixels++ = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
         }
         row += backbuffer->pitch;

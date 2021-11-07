@@ -173,10 +173,11 @@ int main(int argc, char** argv)
         sprintf(debug_str, "ms:%.3f", debug_current_ms);
         tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, 0, debug_str);
         sprintf(debug_str, "fps:%d", (u32)(1.0f/debug_current_ms+0.5f));
-        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, font_height, debug_str);
+        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, font_height+4, debug_str);
 
         tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
-        tgui_draw_bitmap(&tgui_backbuffer, &dog_bitmap, tgui_backbuffer.width/2 - dog_bitmap.width/2, tgui_backbuffer.height/2 - dog_bitmap.height/2, dog_bitmap.width, dog_bitmap.height);
+        tgui_draw_bitmap(&tgui_backbuffer, &dog_bitmap, tgui_backbuffer.width/2 - dog_bitmap.width, tgui_backbuffer.height/2 - dog_bitmap.height/2, dog_bitmap.width/2, dog_bitmap.height);
+        tgui_copy_bitmap(&tgui_backbuffer, &dog_bitmap, tgui_backbuffer.width/2, tgui_backbuffer.height/2 - dog_bitmap.height/2);
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);
