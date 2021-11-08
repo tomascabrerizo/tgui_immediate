@@ -61,6 +61,18 @@ static LRESULT win32_window_proc(HWND window, UINT message, WPARAM w_param, LPAR
             mouse_event.pos_y = (i16)HIWORD(l_param);
             tgui_push_event((TGuiEvent)mouse_event);
         }break;
+        case WM_LBUTTONDOWN:
+        {
+            TGuiEvent mouse_event = {0};
+            mouse_event.type = TGUI_EVENT_MOUSEDOWN;
+            tgui_push_event(mouse_event);
+        }break;
+        case WM_LBUTTONUP:
+        {
+            TGuiEvent mouse_event = {0};
+            mouse_event.type = TGUI_EVENT_MOUSEUP;
+            tgui_push_event(mouse_event);
+        }break;
         default:
         {
             result = DefWindowProcA(window, message, w_param, l_param);
@@ -119,9 +131,6 @@ int main(int argc, char** argv)
     
     UNUSED_VAR(delta_time);
     
-    // NOTE: init TGUI lib
-    tgui_init();
-
     // NOTE: backbuffer for tgui to draw all the elements
     TGuiBackbuffer tgui_backbuffer = {0};
     tgui_backbuffer.width = WINDOW_WIDTH;
@@ -129,9 +138,13 @@ int main(int argc, char** argv)
     tgui_backbuffer.pitch = WINDOW_WIDTH * sizeof(u32);
     tgui_backbuffer.data = global_backbuffer_data;
     
+    // NOTE: init TGUI lib
+    tgui_init(&tgui_backbuffer);
+    
     // NOTE: load bitmap for testing
     TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/font.bmp");
     TGuiBitmap dog_bitmap = tgui_debug_load_bmp("data/test.bmp");
+    UNUSED_VAR(dog_bitmap);
     // NOTE: create a font for testing 
     TGuiFont test_font = tgui_create_font(&test_bitmap, 7, 9, 18, 6);
     
@@ -161,23 +174,26 @@ int main(int argc, char** argv)
         
         // NOTE: Update TGUI lib
         tgui_update();
-
         // NOTE: clear the screen
         tgui_clear_backbuffer(&tgui_backbuffer);
-        
+         
         char debug_str[256];
-        u32 font_height = 18;
+        u32 font_height = 9;
         sprintf(debug_str, "mouse pos (x:%d, y:%d)", tgui_global_state.mouse_x, tgui_global_state.mouse_y);
         tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, tgui_backbuffer.height - font_height, debug_str);
         
         sprintf(debug_str, "ms:%.3f", debug_current_ms);
         tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, 0, debug_str);
         sprintf(debug_str, "fps:%d", (u32)(1.0f/debug_current_ms+0.5f));
-        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, font_height+4, debug_str);
+        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, font_height, debug_str);
 
         tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
-        tgui_draw_bitmap(&tgui_backbuffer, &dog_bitmap, tgui_backbuffer.width/2 - dog_bitmap.width, tgui_backbuffer.height/2 - dog_bitmap.height/2, dog_bitmap.width/2, dog_bitmap.height);
-        tgui_copy_bitmap(&tgui_backbuffer, &dog_bitmap, tgui_backbuffer.width/2, tgui_backbuffer.height/2 - dog_bitmap.height/2);
+        
+        TGuiRect button_rect = (TGuiRect){200, 200, 400, 200};
+        if(tgui_button(main, "test_button", button_rect))
+        {
+            printf("button click!\n");
+        }
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

@@ -26,6 +26,13 @@ typedef double f64;
 #define OFFSET_OFF(s, p) (u64)(&(((s *)0)->p))
 #define TGUI_API __declspec(dllexport)
 
+// NOTE: color pallete
+#define TGUI_BLACK  0xFF323031
+#define TGUI_ORANGE 0xFFF4AC45
+#define TGUI_RED    0xFFFF5154
+#define TGUI_GREY   0xFF8896AB
+#define TGUI_GREEN  0xFFC4EBC8
+
 // TODO: TGuiBackbuffer and TGuiBitmap are practicaly the same thing
 typedef struct TGuiBackbuffer
 {
@@ -64,6 +71,8 @@ typedef struct TGuiFont
 typedef enum TGuiEventType
 {
     TGUI_EVENT_MOUSEMOVE,
+    TGUI_EVENT_MOUSEDOWN,
+    TGUI_EVENT_MOUSEUP,
     TGUI_EVENT_KEYDOWN,
     TGUI_EVENT_KEYUP,
 
@@ -75,6 +84,8 @@ typedef struct TGuiEventMouseMove
     TGuiEventType type;
     i32 pos_x;
     i32 pos_y;
+    b32 up;
+    b32 down;
 } TGuiEventMouseMove;
 
 typedef union TGuiEvent
@@ -83,23 +94,45 @@ typedef union TGuiEvent
     TGuiEventMouseMove mouse;
 } TGuiEvent;
 
+// NOTE: this gui use the imgui paradigm, more info here: https://www.youtube.com/watch?v=Z1qyvQsjK5Y
+typedef struct TGuiWidget
+{
+    void *id;
+} TGuiWidget;
+
 #define TGUI_EVENT_QUEUE_MAX 128
 typedef struct TGuiState
 {
+    TGuiBackbuffer *backbuffer;
+
     TGuiEvent event_queue[TGUI_EVENT_QUEUE_MAX];
     u32 event_queue_count;
-
+    
     i32 mouse_x;
     i32 mouse_y;
+    b32 mouse_up;
+    b32 mouse_down;
+
+    TGuiWidget hot;
+    TGuiWidget active;
         
 } TGuiState;
+
+// TODO: Maybe the state should be provided by the application?
 // NOTE: global state (stores all internal state of the GUI)
 static TGuiState tgui_global_state;
+void tgui_set_hot(void *id);
+void tgui_set_active(void *id);
+b32 tgui_is_hot(void *id);
+b32 tgui_is_active(void *id);
+b32 tgui_over(TGuiRect rect);
 
 // NOTE: core lib functions
-TGUI_API void tgui_init(void);
+TGUI_API void tgui_init(TGuiBackbuffer *backbuffer);
 TGUI_API void tgui_update(void);
 TGUI_API void tgui_push_event(TGuiEvent event);
+
+TGUI_API b32 tgui_button(void *id, char *text, TGuiRect rect);
 
 // NOTE: DEBUG function
 TGuiBitmap tgui_debug_load_bmp(char *path);

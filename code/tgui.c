@@ -5,16 +5,58 @@
 #include <stdlib.h>
 #include <string.h>
 
-// NOTE: core lib functions
-void tgui_init(void)
+void tgui_set_hot(void *id)
 {
     TGuiState *state = &tgui_global_state;
+    state->hot.id = id; 
+}
+
+void tgui_set_active(void *id)
+{
+    TGuiState *state = &tgui_global_state;
+    state->active.id = id; 
+}
+
+b32 tgui_over(TGuiRect rect)
+{
+    i32 min_x = rect.x;
+    i32 min_y = rect.y;
+    i32 max_x = rect.x + rect.width;
+    i32 max_y = rect.y + rect.height;
+    TGuiState *state = &tgui_global_state;
+    b32 result = state->mouse_x >= min_x && state->mouse_x <= max_x &&
+                 state->mouse_y >= min_y && state->mouse_y <= max_y;
+    return result;
+}
+
+b32 tgui_is_hot(void *id)
+{
+    TGuiState *state = &tgui_global_state;
+    b32 result = state->hot.id == id; 
+    return result; 
+}
+
+b32 tgui_is_active(void *id)
+{
+    TGuiState *state = &tgui_global_state;
+    b32 result = state->active.id == id; 
+    return result; 
+}
+
+// NOTE: core lib functions
+void tgui_init(TGuiBackbuffer *backbuffer)
+{
+    TGuiState *state = &tgui_global_state;
+    state->backbuffer = backbuffer;
     state->event_queue_count = 0;
 }
 
 void tgui_update(void)
 {
     TGuiState *state = &tgui_global_state;
+    // NOTE: clear old state that are not needed any more
+    state->mouse_up = false;
+    state->mouse_down = false;
     // NOTE: pull tgui events from the queue
     for(u32 event_index = 0; event_index < state->event_queue_count; ++event_index)
     {
@@ -35,6 +77,14 @@ void tgui_update(void)
                 state->mouse_x = mouse->pos_x;
                 state->mouse_y = mouse->pos_y;
             } break;
+            case TGUI_EVENT_MOUSEDOWN:
+            {
+                state->mouse_down = true;
+            } break;
+            case TGUI_EVENT_MOUSEUP:
+            {
+                state->mouse_up = true;
+            } break;
             default:
             {
                 ASSERT(!"invalid code path");
@@ -51,6 +101,47 @@ void tgui_push_event(TGuiEvent event)
     {
         state->event_queue[state->event_queue_count++] = event;
     }
+}
+
+b32 tgui_button(void *id, char *text, TGuiRect rect)
+{
+    TGuiState *state = &tgui_global_state;
+    b32 result = false;
+    UNUSED_VAR(text);
+    if(tgui_is_active(id))
+    {
+        if(state->mouse_up)
+        {
+            if(tgui_is_hot(id))
+            {
+                result = true;
+            }
+            tgui_set_active(0);
+        }
+    }
+    else if(tgui_is_hot(id))
+    {
+        if(state->mouse_down)
+        {
+            tgui_set_active(id);
+        }
+    }
+    if(tgui_over(rect))
+    {
+        tgui_set_hot(id);
+    }
+    else
+    {
+        tgui_set_hot(0);
+    }
+
+    u32 color = TGUI_BLACK; 
+    if(tgui_is_hot(id)) color = TGUI_GREY;
+    if(tgui_is_active(id)) color = TGUI_GREEN;
+    if(result) color = TGUI_RED;
+    tgui_draw_rect(state->backbuffer, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, color);
+
+    return result;
 }
 
 // NOTE: DEBUG functions
@@ -238,6 +329,7 @@ void tgui_copy_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32
     }
 }
 
+// TODO: create a round_f32u32() function
 void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest)
 {
     // TODO: Implment alpha bending
@@ -267,7 +359,8 @@ void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, T
     {
         max_y = backbuffer->height;
     }
-
+    
+    // TODO: this clipping is not necessary, the src rect should always be correct
     // NOTE: clip src rect to the bitmap
     i32 src_min_x = src.x;
     i32 src_min_y = src.y;
