@@ -44,10 +44,11 @@ b32 tgui_is_active(void *id)
 }
 
 // NOTE: core lib functions
-void tgui_init(TGuiBackbuffer *backbuffer)
+void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font)
 {
     TGuiState *state = &tgui_global_state;
     state->backbuffer = backbuffer;
+    state->font = font;
     state->event_queue_count = 0;
 }
 
@@ -103,16 +104,22 @@ void tgui_push_event(TGuiEvent event)
     }
 }
 
-b32 tgui_button(void *id, char *text, TGuiRect rect)
+b32 tgui_button(void *id, char *text, i32 x, i32 y)
 {
     TGuiState *state = &tgui_global_state;
     b32 result = false;
-    UNUSED_VAR(text);
+    
+    u32 text_height = 18;
+    u32 text_width = tgui_get_text_wdith(state->font, text, text_height);
+    u32 h_padding = 20;
+    u32 v_padding = 30;
+    TGuiRect rect = {x, y, text_width + h_padding, text_height + v_padding};
+
     if(tgui_is_active(id))
     {
         if(state->mouse_up)
         {
-            if(tgui_is_hot(id))
+            if(tgui_is_hot(id) && tgui_over(rect))
             {
                 result = true;
             }
@@ -126,21 +133,20 @@ b32 tgui_button(void *id, char *text, TGuiRect rect)
             tgui_set_active(id);
         }
     }
+    // TODO: check this logic the hot widget must persist frames
     if(tgui_over(rect))
     {
         tgui_set_hot(id);
     }
-    else
-    {
-        tgui_set_hot(0);
-    }
-
+    
     u32 color = TGUI_BLACK; 
     if(tgui_is_hot(id)) color = TGUI_GREY;
     if(tgui_is_active(id)) color = TGUI_GREEN;
     if(result) color = TGUI_RED;
+    
     tgui_draw_rect(state->backbuffer, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, color);
-
+    tgui_draw_text(state->backbuffer, state->font, text_height, x+h_padding*0.5f, y+v_padding*0.5f, text);
+    
     return result;
 }
 
@@ -450,10 +456,20 @@ void tgui_draw_text(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 
     f32 w_ration = (f32)font->src_rect.width / (f32)font->src_rect.height;
     u32 width = (u32)(w_ration * (f32)height + 0.5f);
      
-    u32 legth = strlen((const char *)text);
-    for(u32 index = 0; index < legth; ++index)
+    u32 length = strlen((const char *)text);
+    for(u32 index = 0; index < length; ++index)
     {
         tgui_draw_char(backbuffer, font, height, x, y, text[index]);
         x += width;
     }
+}
+
+u32 tgui_get_text_wdith(TGuiFont *font, char *text, u32 height)
+{
+    f32 w_ration = (f32)font->src_rect.width / (f32)font->src_rect.height;
+    u32 width = (u32)(w_ration * (f32)height + 0.5f);
+     
+    u32 length = strlen((const char *)text);
+    u32 result = width * length;
+    return result;
 }

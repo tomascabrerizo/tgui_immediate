@@ -138,15 +138,15 @@ int main(int argc, char** argv)
     tgui_backbuffer.pitch = WINDOW_WIDTH * sizeof(u32);
     tgui_backbuffer.data = global_backbuffer_data;
     
-    // NOTE: init TGUI lib
-    tgui_init(&tgui_backbuffer);
-    
     // NOTE: load bitmap for testing
     TGuiBitmap test_bitmap = tgui_debug_load_bmp("data/font.bmp");
     TGuiBitmap dog_bitmap = tgui_debug_load_bmp("data/test.bmp");
     UNUSED_VAR(dog_bitmap);
     // NOTE: create a font for testing 
     TGuiFont test_font = tgui_create_font(&test_bitmap, 7, 9, 18, 6);
+    
+    // NOTE: init TGUI lib
+    tgui_init(&tgui_backbuffer, &test_font);
     
     while(global_running)
     {
@@ -189,11 +189,19 @@ int main(int argc, char** argv)
 
         tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
         
-        TGuiRect button_rect = (TGuiRect){200, 200, 400, 200};
-        if(tgui_button(main, "test_button", button_rect))
+        static char *button_text = "not button pressed";
+        int button1 = 1;
+        if(tgui_button(&button1, "test_button_1", 10, 200))
         {
-            printf("button click!\n");
+            button_text = "button 1 pressed";
         }
+        // TODO: fix more than one  button
+        int button2 = 2;
+        if(tgui_button(&button2, "test_button_2", 10, 250))
+        {
+            button_text = "button 2 pressed";
+        }
+        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 300, 200, button_text); 
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

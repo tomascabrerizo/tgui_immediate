@@ -104,6 +104,7 @@ typedef struct TGuiWidget
 typedef struct TGuiState
 {
     TGuiBackbuffer *backbuffer;
+    TGuiFont *font;
 
     TGuiEvent event_queue[TGUI_EVENT_QUEUE_MAX];
     u32 event_queue_count;
@@ -128,11 +129,11 @@ b32 tgui_is_active(void *id);
 b32 tgui_over(TGuiRect rect);
 
 // NOTE: core lib functions
-TGUI_API void tgui_init(TGuiBackbuffer *backbuffer);
+TGUI_API void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font);
 TGUI_API void tgui_update(void);
 TGUI_API void tgui_push_event(TGuiEvent event);
 
-TGUI_API b32 tgui_button(void *id, char *text, TGuiRect rect);
+TGUI_API b32 tgui_button(void *id, char *text, i32 x, i32 y);
 
 // NOTE: DEBUG function
 TGuiBitmap tgui_debug_load_bmp(char *path);
@@ -151,5 +152,6 @@ TGUI_API void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *
 TGUI_API TGuiFont tgui_create_font(TGuiBitmap *bitmap, u32 char_width, u32 char_height, u32 num_rows, u32 num_cols);
 TGUI_API void tgui_draw_char(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char character);
 TGUI_API void tgui_draw_text(TGuiBackbuffer *backbuffer, TGuiFont *font, u32 height, i32 x, i32 y, char *text);
+TGUI_API u32 tgui_get_text_wdith(TGuiFont *font, char *text, u32 height);
 
 #endif // TGUI_WIN32_H
