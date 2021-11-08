@@ -224,6 +224,7 @@ TGuiBitmap tgui_debug_load_bmp(char *path)
             u32 *dst_pixels = dst_row;
             for(u32 x = 0; x < result.width; ++x)
             {
+                
                 *dst_pixels++ = *src_pixels++;
             }
             src_row -= bmp_header.width;
@@ -405,7 +406,14 @@ void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, T
         {
             f32 ratio_x = (f32)(x + offset_x) / (f32)dest.width;
             u32 bitmap_x = src_min_x + (u32)((f32)src_width * ratio_x + 0.5f);
-            *pixels++ = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
+            u32 src_color = bitmap->pixels[bitmap_y*bitmap->width + bitmap_x];
+            // TODO: implements real alpha bending
+            u8 alpha = (u8)((src_color >> 24) & 0xFF);
+            if(alpha > 128) 
+            {
+                *pixels = src_color;
+            }
+            pixels++;
         }
         row += backbuffer->pitch;
     }
