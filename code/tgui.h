@@ -107,6 +107,7 @@ typedef struct TGuiDrawCommand
 {
     TGuiDrawCommandType type;
     TGuiRect descriptor;
+    TGuiBitmap *bitmap;
     u32 color;
     char *text;
 } TGuiDrawCommand;
@@ -121,7 +122,6 @@ typedef struct TGuiWindowDescriptor
 {
     TGuiRect dim;
     i32 margin;
-    i32 padding;
     
     // NOTE: internal use only
     i32 next_x;

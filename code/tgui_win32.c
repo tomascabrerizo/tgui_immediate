@@ -189,19 +189,34 @@ int main(int argc, char** argv)
 
         tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
         
-        static char *button_text = "not button pressed";
-        int button1 = 1;
-        if(tgui_button(&button1, "test_button_1", 10, 200))
+        i32 window = 0;
+        TGuiWindowDescriptor window_descriptor;
+        window_descriptor.dim = (TGuiRect){100, 100, 250, 300};
+        window_descriptor.margin = 20;
+        
+        tgui_begin_window(&window, &window_descriptor);
+        static int button = 0;
+        if(tgui_button((void *)1, "test_button_1", 0, 0))
         {
-            button_text = "button 1 pressed";
+            button = 1;
         }
-        // TODO: fix more than one  button
-        int button2 = 2;
-        if(tgui_button(&button2, "test_button_2", 10, 270))
+        if(tgui_button((void *)2, "test_button_2", 0, 0))
         {
-            button_text = "button 2 pressed";
+            button = 2;
         }
-        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 300, 200, button_text); 
+        if(tgui_button((void *)3, "test_button_3", 0, 0))
+        {
+            button = 3;
+        }
+        if(tgui_button((void *)4, "test_button_4", 0, 0))
+        {
+            button = 4;
+        }
+        tgui_end_window(&window);
+        
+        char button_text[64];
+        sprintf(button_text, "button %d pressed!", button);
+        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 370, 100, button_text); 
         
         tgui_draw_command_buffer();
 

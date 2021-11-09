@@ -35,8 +35,7 @@ b32 tgui_is_over(TGuiRect rect)
 
 void tgui_compute_next_widget_pos(TGuiWindowDescriptor *window_descriptor, u32 widget_height)
 {
-    window_descriptor->next_x = window_descriptor->dim.x + window_descriptor->margin;
-    window_descriptor->next_y += window_descriptor->dim.y + window_descriptor->padding + widget_height;
+    window_descriptor->next_y +=  window_descriptor->margin + widget_height;
 }
 
 b32 tgui_is_hot(void *id)
@@ -97,8 +96,8 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
     
     if(state->parent_window)
     {
-        x = state->window_descriptor->next_x;
-        y = state->window_descriptor->next_y;
+        rect.x = state->window_descriptor->next_x;
+        rect.y = state->window_descriptor->next_y;
         tgui_compute_next_widget_pos(state->window_descriptor, rect.height);
     }
 
@@ -132,7 +131,7 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
         tgui_set_hot(id);
     }
     
-    u32 color = TGUI_BLACK; 
+    u32 color = TGUI_GREY; 
     if(tgui_is_hot(id)) color = TGUI_GREY;
     if(tgui_is_active(id)) color = TGUI_GREEN;
     if(result) color = TGUI_RED;
@@ -145,8 +144,8 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
 
     TGuiDrawCommand text_command = {0};
     text_command.type = TGUI_DRAWCMD_TEXT;
-    text_command.descriptor.x = x+h_padding*0.5f;
-    text_command.descriptor.y = y+v_padding*0.5f;
+    text_command.descriptor.x = rect.x + h_padding*0.5f;
+    text_command.descriptor.y = rect.y + v_padding*0.5f;
     text_command.descriptor.width = tgui_get_text_wdith(state->font, text, state->font_height);
     text_command.descriptor.height = state->font_height;
     text_command.text = text;
@@ -178,6 +177,9 @@ void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor)
     ASSERT(window_descriptor && "window must have a descriptor");
 
     state->parent_window = id;
+    
+    window_descriptor->next_x = window_descriptor->dim.x + window_descriptor->margin;
+    window_descriptor->next_y = window_descriptor->dim.y;
     tgui_compute_next_widget_pos(window_descriptor, 0);
     state->window_descriptor = window_descriptor;
 
@@ -261,9 +263,11 @@ void tgui_draw_command_buffer(void)
             } break;
             case TGUI_DRAWCMD_BITMAP:
             {
+                tgui_draw_bitmap(state->backbuffer, draw_cmd->bitmap, draw_cmd->descriptor.x, draw_cmd->descriptor.y, draw_cmd->descriptor.width, draw_cmd->descriptor.height);
             } break;
             case TGUI_DRAWCMD_TEXT:
             {
+                tgui_draw_text(state->backbuffer, state->font, state->font_height, draw_cmd->descriptor.x, draw_cmd->descriptor.y, draw_cmd->text);
             } break;
             default:
             {
