@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO: Maybe the state should be provided by the application?
+TGuiState tgui_global_state;
+
 void tgui_set_hot(void *id)
 {
     TGuiState *state = &tgui_global_state;
@@ -17,7 +20,7 @@ void tgui_set_active(void *id)
     state->active.id = id; 
 }
 
-b32 tgui_over(TGuiRect rect)
+b32 tgui_is_over(TGuiRect rect)
 {
     i32 min_x = rect.x;
     i32 min_y = rect.y;
@@ -48,8 +51,12 @@ void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font)
 {
     TGuiState *state = &tgui_global_state;
     state->backbuffer = backbuffer;
+    
     state->font = font;
+    state->font_height = 9;
+    
     state->event_queue_count = 0;
+    state->draw_command_buffer_count = 0;
 }
 
 void tgui_update(void)
@@ -104,22 +111,33 @@ void tgui_push_event(TGuiEvent event)
     }
 }
 
+void tgui_push_draw_command(TGuiDrawCommand draw_command)
+{
+    TGuiState *state = &tgui_global_state;
+    if(state->draw_command_buffer_count < TGUI_DRAW_COMMANDS_MAX)
+    {
+        state->draw_command_buffer[state->draw_command_buffer_count++] = draw_command;
+    }
+}
+
 b32 tgui_button(void *id, char *text, i32 x, i32 y)
 {
     TGuiState *state = &tgui_global_state;
     b32 result = false;
     
-    u32 text_height = 18;
+    u32 text_height = state->font_height;
     u32 text_width = tgui_get_text_wdith(state->font, text, text_height);
     u32 h_padding = 20;
     u32 v_padding = 30;
     TGuiRect rect = {x, y, text_width + h_padding, text_height + v_padding};
+    
+    b32 is_over = tgui_is_over(rect);
 
     if(tgui_is_active(id))
     {
         if(state->mouse_up)
         {
-            if(tgui_is_hot(id) && tgui_over(rect))
+            if(tgui_is_hot(id) && is_over)
             {
                 result = true;
             }
@@ -132,9 +150,12 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
         {
             tgui_set_active(id);
         }
+        if(!is_over)
+        {
+            tgui_set_hot(0);
+        }
     }
-    // TODO: check this logic the hot widget must persist frames
-    if(tgui_over(rect))
+    if(is_over)
     {
         tgui_set_hot(id);
     }
@@ -144,10 +165,44 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
     if(tgui_is_active(id)) color = TGUI_GREEN;
     if(result) color = TGUI_RED;
     
-    tgui_draw_rect(state->backbuffer, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, color);
-    tgui_draw_text(state->backbuffer, state->font, text_height, x+h_padding*0.5f, y+v_padding*0.5f, text);
+    TGuiDrawCommand rect_command = {0};
+    rect_command.type = TGUI_DRAWCMD_RECT;
+    rect_command.descriptor = rect;
+    rect_command.color = color;
+    tgui_push_draw_command(rect_command);
+
+    TGuiDrawCommand text_command = {0};
+    text_command.type = TGUI_DRAWCMD_TEXT;
+    text_command.descriptor.x = x+h_padding*0.5f;
+    text_command.descriptor.y = y+v_padding*0.5f;
+    text_command.text = text;
+    tgui_push_draw_command(text_command);
     
     return result;
+}
+
+void tgui_label(void *id, char *text, i32 x, i32 y)
+{
+    // TODO: labels should care about hot active?
+    UNUSED_VAR(id);
+    TGuiState *state = &tgui_global_state;
+    tgui_draw_text(state->backbuffer, state->font, state->font_height, x, y, text);
+}
+
+void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor)
+{
+    TGuiState *state = &tgui_global_state;
+    state->current_window = id;
+    state->window_descriptor = window_descriptor;
+}
+
+void tgui_end_window(void *id)
+{
+    UNUSED_VAR(id);
+    TGuiState *state = &tgui_global_state;
+
+    state->current_window = 0;
+    state->window_descriptor = 0;
 }
 
 // NOTE: DEBUG functions

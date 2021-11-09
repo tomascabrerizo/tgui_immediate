@@ -197,7 +197,7 @@ int main(int argc, char** argv)
         }
         // TODO: fix more than one  button
         int button2 = 2;
-        if(tgui_button(&button2, "test_button_2", 10, 250))
+        if(tgui_button(&button2, "test_button_2", 10, 270))
         {
             button_text = "button 2 pressed";
         }

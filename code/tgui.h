@@ -84,8 +84,6 @@ typedef struct TGuiEventMouseMove
     TGuiEventType type;
     i32 pos_x;
     i32 pos_y;
-    b32 up;
-    b32 down;
 } TGuiEventMouseMove;
 
 typedef union TGuiEvent
@@ -94,20 +92,51 @@ typedef union TGuiEvent
     TGuiEventMouseMove mouse;
 } TGuiEvent;
 
+typedef enum TGuiDrawCommandType
+{
+    TGUI_DRAWCMD_CLEAR,
+    TGUI_DRAWCMD_RECT,
+    TGUI_DRAWCMD_BITMAP,
+    // TODO: TGUI_DRAWCMD_TEXT can be a combination of draw bitmaps commands
+    TGUI_DRAWCMD_TEXT,
+    
+    TGUI_DRAWCMD_COUNT,
+} TGuiDrawCommandType;
+
+typedef struct TGuiDrawCommand 
+{
+    TGuiDrawCommandType type;
+    TGuiRect descriptor;
+    u32 color;
+    char *text;
+} TGuiDrawCommand;
+
 // NOTE: this gui use the imgui paradigm, more info here: https://www.youtube.com/watch?v=Z1qyvQsjK5Y
 typedef struct TGuiWidget
 {
     void *id;
 } TGuiWidget;
 
+typedef struct TGuiWindowDescriptor
+{
+    TGuiRect dim;
+    i32 margin;
+    i32 padding;
+} TGuiWindowDescriptor;
+
+// TODO: make container structs for this queues, like std::vector<> in c++
+#define TGUI_DRAW_COMMANDS_MAX 128
 #define TGUI_EVENT_QUEUE_MAX 128
 typedef struct TGuiState
 {
     TGuiBackbuffer *backbuffer;
     TGuiFont *font;
+    u32 font_height;
 
     TGuiEvent event_queue[TGUI_EVENT_QUEUE_MAX];
     u32 event_queue_count;
+    TGuiDrawCommand draw_command_buffer[TGUI_DRAW_COMMANDS_MAX];
+    u32 draw_command_buffer_count;
     
     i32 mouse_x;
     i32 mouse_y;
@@ -116,24 +145,31 @@ typedef struct TGuiState
 
     TGuiWidget hot;
     TGuiWidget active;
-        
+
+    TGuiWindowDescriptor *window_descriptor; 
+    void *current_window;
 } TGuiState;
 
 // TODO: Maybe the state should be provided by the application?
 // NOTE: global state (stores all internal state of the GUI)
-static TGuiState tgui_global_state;
+extern TGuiState tgui_global_state;
+
 void tgui_set_hot(void *id);
 void tgui_set_active(void *id);
 b32 tgui_is_hot(void *id);
 b32 tgui_is_active(void *id);
-b32 tgui_over(TGuiRect rect);
+b32 tgui_is_over(TGuiRect rect);
 
 // NOTE: core lib functions
 TGUI_API void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font);
 TGUI_API void tgui_update(void);
 TGUI_API void tgui_push_event(TGuiEvent event);
-
+TGUI_API void tgui_push_draw_command(TGuiDrawCommand draw_command);
+// NOTE tgui widgets
 TGUI_API b32 tgui_button(void *id, char *text, i32 x, i32 y);
+TGUI_API void tgui_label(void *id, char *text, i32 x, i32 y);
+TGUI_API void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor);
+TGUI_API void tgui_end_window(void *id);
 
 // NOTE: DEBUG function
 TGuiBitmap tgui_debug_load_bmp(char *path);
