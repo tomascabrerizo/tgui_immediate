@@ -32,6 +32,13 @@ b32 tgui_is_over(TGuiRect rect)
     return result;
 }
 
+
+void tgui_compute_next_widget_pos(TGuiWindowDescriptor *window_descriptor, u32 widget_height)
+{
+    window_descriptor->next_x = window_descriptor->dim.x + window_descriptor->margin;
+    window_descriptor->next_y += window_descriptor->dim.y + window_descriptor->padding + widget_height;
+}
+
 b32 tgui_is_hot(void *id)
 {
     TGuiState *state = &tgui_global_state;
@@ -57,6 +64,137 @@ void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font)
     
     state->event_queue_count = 0;
     state->draw_command_buffer_count = 0;
+}
+
+void tgui_push_event(TGuiEvent event)
+{
+    TGuiState *state = &tgui_global_state;
+    if(state->event_queue_count < TGUI_EVENT_QUEUE_MAX)
+    {
+        state->event_queue[state->event_queue_count++] = event;
+    }
+}
+
+void tgui_push_draw_command(TGuiDrawCommand draw_command)
+{
+    TGuiState *state = &tgui_global_state;
+    if(state->draw_command_buffer_count < TGUI_DRAW_COMMANDS_MAX)
+    {
+        state->draw_command_buffer[state->draw_command_buffer_count++] = draw_command;
+    }
+}
+
+b32 tgui_button(void *id, char *text, i32 x, i32 y)
+{
+    TGuiState *state = &tgui_global_state;
+    
+
+    u32 text_height = state->font_height;
+    u32 text_width = tgui_get_text_wdith(state->font, text, text_height);
+    u32 h_padding = 20;
+    u32 v_padding = 30;
+    TGuiRect rect = {x, y, text_width + h_padding, text_height + v_padding};
+    
+    if(state->parent_window)
+    {
+        x = state->window_descriptor->next_x;
+        y = state->window_descriptor->next_y;
+        tgui_compute_next_widget_pos(state->window_descriptor, rect.height);
+    }
+
+    b32 result = false;
+    b32 is_over = tgui_is_over(rect);
+
+    if(tgui_is_active(id))
+    {
+        if(state->mouse_up)
+        {
+            if(tgui_is_hot(id) && is_over)
+            {
+                result = true;
+            }
+            tgui_set_active(0);
+        }
+    }
+    else if(tgui_is_hot(id))
+    {
+        if(state->mouse_down)
+        {
+            tgui_set_active(id);
+        }
+        if(!is_over)
+        {
+            tgui_set_hot(0);
+        }
+    }
+    if(is_over)
+    {
+        tgui_set_hot(id);
+    }
+    
+    u32 color = TGUI_BLACK; 
+    if(tgui_is_hot(id)) color = TGUI_GREY;
+    if(tgui_is_active(id)) color = TGUI_GREEN;
+    if(result) color = TGUI_RED;
+    
+    TGuiDrawCommand rect_command = {0};
+    rect_command.type = TGUI_DRAWCMD_RECT;
+    rect_command.descriptor = rect;
+    rect_command.color = color;
+    tgui_push_draw_command(rect_command);
+
+    TGuiDrawCommand text_command = {0};
+    text_command.type = TGUI_DRAWCMD_TEXT;
+    text_command.descriptor.x = x+h_padding*0.5f;
+    text_command.descriptor.y = y+v_padding*0.5f;
+    text_command.descriptor.width = tgui_get_text_wdith(state->font, text, state->font_height);
+    text_command.descriptor.height = state->font_height;
+    text_command.text = text;
+    tgui_push_draw_command(text_command);
+    
+    return result;
+}
+
+void tgui_label(void *id, char *text, i32 x, i32 y)
+{
+    // TODO: labels should care about hot active?
+    UNUSED_VAR(id);
+    TGuiState *state = &tgui_global_state;
+    
+    TGuiDrawCommand text_command = {0};
+    text_command.type = TGUI_DRAWCMD_TEXT;
+    text_command.descriptor.x = x;
+    text_command.descriptor.y = y;
+    text_command.descriptor.width = tgui_get_text_wdith(state->font, text, state->font_height);
+    text_command.descriptor.height = state->font_height;
+    text_command.text = text;
+    tgui_push_draw_command(text_command);
+}
+
+void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor)
+{
+    TGuiState *state = &tgui_global_state;
+    
+    ASSERT(window_descriptor && "window must have a descriptor");
+
+    state->parent_window = id;
+    tgui_compute_next_widget_pos(window_descriptor, 0);
+    state->window_descriptor = window_descriptor;
+
+    TGuiDrawCommand rect_command = {0};
+    rect_command.type = TGUI_DRAWCMD_RECT;
+    rect_command.descriptor = window_descriptor->dim;
+    rect_command.color = TGUI_BLACK;
+    tgui_push_draw_command(rect_command);
+}
+
+void tgui_end_window(void *id)
+{
+    UNUSED_VAR(id);
+    TGuiState *state = &tgui_global_state;
+
+    state->parent_window = 0;
+    state->window_descriptor = 0;
 }
 
 void tgui_update(void)
@@ -102,107 +240,38 @@ void tgui_update(void)
     state->event_queue_count = 0;
 }
 
-void tgui_push_event(TGuiEvent event)
+void tgui_draw_command_buffer(void)
 {
     TGuiState *state = &tgui_global_state;
-    if(state->event_queue_count < TGUI_EVENT_QUEUE_MAX)
+    // NOTE: pull tgui draw commands from the buffer 
+    for(u32 cmd_index = 0; cmd_index < state->draw_command_buffer_count; ++cmd_index)
     {
-        state->event_queue[state->event_queue_count++] = event;
-    }
-}
-
-void tgui_push_draw_command(TGuiDrawCommand draw_command)
-{
-    TGuiState *state = &tgui_global_state;
-    if(state->draw_command_buffer_count < TGUI_DRAW_COMMANDS_MAX)
-    {
-        state->draw_command_buffer[state->draw_command_buffer_count++] = draw_command;
-    }
-}
-
-b32 tgui_button(void *id, char *text, i32 x, i32 y)
-{
-    TGuiState *state = &tgui_global_state;
-    b32 result = false;
-    
-    u32 text_height = state->font_height;
-    u32 text_width = tgui_get_text_wdith(state->font, text, text_height);
-    u32 h_padding = 20;
-    u32 v_padding = 30;
-    TGuiRect rect = {x, y, text_width + h_padding, text_height + v_padding};
-    
-    b32 is_over = tgui_is_over(rect);
-
-    if(tgui_is_active(id))
-    {
-        if(state->mouse_up)
+        TGuiDrawCommand *draw_cmd = state->draw_command_buffer + cmd_index;
+        switch(draw_cmd->type)
         {
-            if(tgui_is_hot(id) && is_over)
+            case TGUI_DRAWCMD_CLEAR:
             {
-                result = true;
-            }
-            tgui_set_active(0);
+                tgui_clear_backbuffer(state->backbuffer);
+            } break;
+            case TGUI_DRAWCMD_RECT:
+            {
+                i32 max_x = draw_cmd->descriptor.x + draw_cmd->descriptor.width;
+                i32 max_y = draw_cmd->descriptor.y + draw_cmd->descriptor.height;
+                tgui_draw_rect(state->backbuffer, draw_cmd->descriptor.x, draw_cmd->descriptor.y, max_x, max_y, draw_cmd->color);
+            } break;
+            case TGUI_DRAWCMD_BITMAP:
+            {
+            } break;
+            case TGUI_DRAWCMD_TEXT:
+            {
+            } break;
+            default:
+            {
+                ASSERT(!"invalid code path");
+            } break;
         }
     }
-    else if(tgui_is_hot(id))
-    {
-        if(state->mouse_down)
-        {
-            tgui_set_active(id);
-        }
-        if(!is_over)
-        {
-            tgui_set_hot(0);
-        }
-    }
-    if(is_over)
-    {
-        tgui_set_hot(id);
-    }
-    
-    u32 color = TGUI_BLACK; 
-    if(tgui_is_hot(id)) color = TGUI_GREY;
-    if(tgui_is_active(id)) color = TGUI_GREEN;
-    if(result) color = TGUI_RED;
-    
-    TGuiDrawCommand rect_command = {0};
-    rect_command.type = TGUI_DRAWCMD_RECT;
-    rect_command.descriptor = rect;
-    rect_command.color = color;
-    tgui_push_draw_command(rect_command);
-
-    TGuiDrawCommand text_command = {0};
-    text_command.type = TGUI_DRAWCMD_TEXT;
-    text_command.descriptor.x = x+h_padding*0.5f;
-    text_command.descriptor.y = y+v_padding*0.5f;
-    text_command.text = text;
-    tgui_push_draw_command(text_command);
-    
-    return result;
-}
-
-void tgui_label(void *id, char *text, i32 x, i32 y)
-{
-    // TODO: labels should care about hot active?
-    UNUSED_VAR(id);
-    TGuiState *state = &tgui_global_state;
-    tgui_draw_text(state->backbuffer, state->font, state->font_height, x, y, text);
-}
-
-void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor)
-{
-    TGuiState *state = &tgui_global_state;
-    state->current_window = id;
-    state->window_descriptor = window_descriptor;
-}
-
-void tgui_end_window(void *id)
-{
-    UNUSED_VAR(id);
-    TGuiState *state = &tgui_global_state;
-
-    state->current_window = 0;
-    state->window_descriptor = 0;
+    state->draw_command_buffer_count = 0;
 }
 
 // NOTE: DEBUG functions

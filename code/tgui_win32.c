@@ -202,6 +202,8 @@ int main(int argc, char** argv)
             button_text = "button 2 pressed";
         }
         tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 300, 200, button_text); 
+        
+        tgui_draw_command_buffer();
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

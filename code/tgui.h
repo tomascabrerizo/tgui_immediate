@@ -122,6 +122,10 @@ typedef struct TGuiWindowDescriptor
     TGuiRect dim;
     i32 margin;
     i32 padding;
+    
+    // NOTE: internal use only
+    i32 next_x;
+    i32 next_y;
 } TGuiWindowDescriptor;
 
 // TODO: make container structs for this queues, like std::vector<> in c++
@@ -146,8 +150,8 @@ typedef struct TGuiState
     TGuiWidget hot;
     TGuiWidget active;
 
-    TGuiWindowDescriptor *window_descriptor; 
-    void *current_window;
+    TGuiWindowDescriptor *window_descriptor;
+    void *parent_window;
 } TGuiState;
 
 // TODO: Maybe the state should be provided by the application?
@@ -159,10 +163,12 @@ void tgui_set_active(void *id);
 b32 tgui_is_hot(void *id);
 b32 tgui_is_active(void *id);
 b32 tgui_is_over(TGuiRect rect);
+void tgui_compute_next_widget_pos(TGuiWindowDescriptor *window_descriptor, u32 widget_height);
 
 // NOTE: core lib functions
 TGUI_API void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font);
 TGUI_API void tgui_update(void);
+TGUI_API void tgui_draw_command_buffer(void);
 TGUI_API void tgui_push_event(TGuiEvent event);
 TGUI_API void tgui_push_draw_command(TGuiDrawCommand draw_command);
 // NOTE tgui widgets
