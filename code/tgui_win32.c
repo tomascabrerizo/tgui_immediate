@@ -148,6 +148,17 @@ int main(int argc, char** argv)
     // NOTE: init TGUI lib
     tgui_init(&tgui_backbuffer, &test_font);
     
+
+    TGuiWindowDescriptor window_descriptor_1 = {0};
+    window_descriptor_1.x = 20;
+    window_descriptor_1.y = 100;
+    window_descriptor_1.margin = 20;
+    
+    TGuiWindowDescriptor window_descriptor_2 = {0};
+    window_descriptor_2.x = 200;
+    window_descriptor_2.y = 100;
+    window_descriptor_2.margin = 20;
+
     while(global_running)
     {
         LARGE_INTEGER large_current_time;
@@ -189,35 +200,46 @@ int main(int argc, char** argv)
 
         tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
         
-        i32 window = 0;
-        TGuiWindowDescriptor window_descriptor = {0};
-        window_descriptor.x = 20;
-        window_descriptor.y = 100;
-        window_descriptor.margin = 20;
-        
-        tgui_begin_window(&window, &window_descriptor);
         static int button = 0;
-        if(tgui_button((void *)1, "test_button_1", 0, 0))
         {
-            button = 1;
+            i32 window = 0; 
+            tgui_begin_window(&window, &window_descriptor_1);
+            if(tgui_button((void *)1, "test_button_1", 0, 0))
+            {
+                button = 1;
+            }
+            if(tgui_button((void *)2, "test_button_2", 0, 0))
+            {
+                button = 2;
+            }
+            if(tgui_button((void *)3, "test_button_3", 0, 0))
+            {
+                button = 3;
+            }
+            if(tgui_button((void *)4, "test_button_4", 0, 0))
+            {
+                button = 4;
+            }
+            if(tgui_button((void *)5, "test_button_5", 0, 0))
+            {
+                button = 5;
+            }
+            tgui_end_window(&window);
         }
-        if(tgui_button((void *)2, "test_button_2", 0, 0))
+
         {
-            button = 2;
+            i32 window = 10;
+            tgui_begin_window(&window, &window_descriptor_2);
+            if(tgui_button((void *)6, "test_button_6", 0, 0))
+            {
+                button = 6;
+            }
+            if(tgui_button((void *)7, "test_button_7", 0, 0))
+            {
+                button = 7;
+            }
+            tgui_end_window(&window);
         }
-        if(tgui_button((void *)3, "test_button_3", 0, 0))
-        {
-            button = 3;
-        }
-        if(tgui_button((void *)4, "test_button_4", 0, 0))
-        {
-            button = 4;
-        }
-        if(tgui_button((void *)5, "test_button_5", 0, 0))
-        {
-            button = 5;
-        }
-        tgui_end_window(&window);
         
         char button_text[64];
         sprintf(button_text, "button %d pressed!", button);

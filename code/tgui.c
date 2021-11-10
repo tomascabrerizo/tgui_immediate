@@ -32,6 +32,19 @@ b32 tgui_is_over(TGuiRect rect)
     return result;
 }
 
+b32 tgui_is_any_hot(void)
+{
+    TGuiState *state = &tgui_global_state;
+    b32 result = state->hot.id != 0;
+    return result;
+}
+b32 tgui_is_other_hot(void *id)
+{
+    
+    TGuiState *state = &tgui_global_state;
+    b32 result = (state->hot.id != 0 && state->hot.id != id);
+    return result;
+}
 
 void tgui_compute_next_widget_pos(TGuiWindowDescriptor *window_descriptor, u32 widget_height)
 {
@@ -63,6 +76,14 @@ void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font)
     
     state->event_queue_count = 0;
     state->draw_command_buffer.top = 0;
+
+    state->mouse_x = 0;
+    state->mouse_y = 0;
+    state->last_mouse_x = 0;
+    state->last_mouse_y = 0;
+    state->mouse_up = false;
+    state->mouse_down = false;
+    state->mouse_is_down = false;
 }
 
 void tgui_push_event(TGuiEvent event)
@@ -146,13 +167,14 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
             tgui_set_hot(0);
         }
     }
+    //if((is_over && !state->parent_window) || (is_over && !tgui_is_active(state->parent_window)))
     if(is_over)
     {
         tgui_set_hot(id);
     }
     
     u32 color = TGUI_GREY; 
-    if(tgui_is_hot(id)) color = TGUI_GREY;
+    if(tgui_is_hot(id)) color = TGUI_ORANGE;
     if(tgui_is_active(id)) color = TGUI_GREEN;
     if(result) color = TGUI_RED;
 
@@ -200,13 +222,14 @@ void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor)
     
     window_descriptor->next_x = window_descriptor->x + window_descriptor->margin;
     window_descriptor->next_y = window_descriptor->y;
+    window_descriptor->current_width = 0;
+    window_descriptor->current_height = 0;
     tgui_compute_next_widget_pos(window_descriptor, 0);
     state->window_descriptor = window_descriptor;
 }
 
 void tgui_end_window(void *id)
 {
-    UNUSED_VAR(id);
     TGuiState *state = &tgui_global_state;
      
     TGuiRect window_descriptor;
@@ -214,11 +237,44 @@ void tgui_end_window(void *id)
     window_descriptor.y = state->window_descriptor->y;
     window_descriptor.width = state->window_descriptor->current_width;
     window_descriptor.height = state->window_descriptor->current_height + state->window_descriptor->margin;
+    
+    u32 color = TGUI_BLACK;
+    if(!tgui_is_other_hot(id) && tgui_is_over(window_descriptor))
+    {
+        tgui_set_hot(id);
+    }
+    if(tgui_is_hot(id) && !tgui_is_over(window_descriptor) && !state->mouse_is_down)
+    {
+        tgui_set_hot(0);
+    }
+    if(tgui_is_hot(id) && state->mouse_is_down)
+    {
+        tgui_set_active(id);
+    }
+    if(tgui_is_active(id))
+    {
+        i32 last_mouse_offset_x = state->last_mouse_x - window_descriptor.x;
+        i32 mouse_offset_x = state->mouse_x - window_descriptor.x;
+        i32 offset_x = mouse_offset_x - last_mouse_offset_x;
+        i32 last_mouse_offset_y = state->last_mouse_y - window_descriptor.y;
+        i32 mouse_offset_y = state->mouse_y - window_descriptor.y;
+        i32 offset_y = mouse_offset_y - last_mouse_offset_y;
+        
+        state->window_descriptor->x += offset_x;
+        state->window_descriptor->y += offset_y;
+    }
+    if(tgui_is_active(id) && !state->mouse_is_down)
+    {
+        tgui_set_active(0);
+    }
+    
+    if(tgui_is_hot(id)) color = TGUI_ORANGE;
+    if(tgui_is_active(id)) color = TGUI_GREEN;
 
     TGuiDrawCommand rect_command = {0};
     rect_command.type = TGUI_DRAWCMD_RECT;
     rect_command.descriptor = window_descriptor;
-    rect_command.color = TGUI_BLACK;
+    rect_command.color = color;
     tgui_push_draw_command(rect_command);
 
     state->parent_window = 0;
@@ -231,6 +287,8 @@ void tgui_update(void)
     // NOTE: clear old state that are not needed any more
     state->mouse_up = false;
     state->mouse_down = false;
+    state->last_mouse_x = state->mouse_x;
+    state->last_mouse_y = state->mouse_y;
     // NOTE: pull tgui events from the queue
     for(u32 event_index = 0; event_index < state->event_queue_count; ++event_index)
     {
@@ -254,10 +312,12 @@ void tgui_update(void)
             case TGUI_EVENT_MOUSEDOWN:
             {
                 state->mouse_down = true;
+                state->mouse_is_down = true;
             } break;
             case TGUI_EVENT_MOUSEUP:
             {
                 state->mouse_up = true;
+                state->mouse_is_down = false;
             } break;
             default:
             {

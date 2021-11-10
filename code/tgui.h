@@ -152,8 +152,11 @@ typedef struct TGuiState
     
     i32 mouse_x;
     i32 mouse_y;
+    i32 last_mouse_x;
+    i32 last_mouse_y;
     b32 mouse_up;
     b32 mouse_down;
+    b32 mouse_is_down;
 
     TGuiWidget hot;
     TGuiWidget active;
@@ -166,11 +169,14 @@ typedef struct TGuiState
 // NOTE: global state (stores all internal state of the GUI)
 extern TGuiState tgui_global_state;
 
+// NOTE: internal gui functions
 void tgui_set_hot(void *id);
 void tgui_set_active(void *id);
 b32 tgui_is_hot(void *id);
 b32 tgui_is_active(void *id);
 b32 tgui_is_over(TGuiRect rect);
+b32 tgui_is_any_hot(void);
+b32 tgui_is_other_hot(void *id);
 void tgui_compute_next_widget_pos(TGuiWindowDescriptor *window_descriptor, u32 widget_height);
 
 // NOTE: core lib functions
@@ -196,7 +202,6 @@ TGUI_API void tgui_draw_rect(TGuiBackbuffer *backbuffer, i32 min_x, i32 min_y, i
 TGUI_API void tgui_copy_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y);
 TGUI_API void tgui_draw_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, i32 x, i32 y, i32 width, i32 height);
 TGUI_API void tgui_draw_src_dest_bitmap(TGuiBackbuffer *backbuffer, TGuiBitmap *bitmap, TGuiRect src, TGuiRect dest);
-
 // NOTE: font funtions
 // TODO: stop using char * (null terminated string) create custom string_view like struct
 // NOTE: height is in pixels
