@@ -120,16 +120,25 @@ typedef struct TGuiWidget
 
 typedef struct TGuiWindowDescriptor
 {
-    TGuiRect dim;
+    i32 x;
+    i32 y;
     i32 margin;
     
     // NOTE: internal use only
+    i32 current_width;
+    i32 current_height;
     i32 next_x;
     i32 next_y;
 } TGuiWindowDescriptor;
 
 // TODO: make container structs for this queues, like std::vector<> in c++
 #define TGUI_DRAW_COMMANDS_MAX 128
+typedef struct TGuiDrawCommandBufferStack
+{
+    TGuiDrawCommand buffer[TGUI_DRAW_COMMANDS_MAX];
+    u32 top;
+} TGuiDrawCommandBufferStack;
+
 #define TGUI_EVENT_QUEUE_MAX 128
 typedef struct TGuiState
 {
@@ -139,8 +148,7 @@ typedef struct TGuiState
 
     TGuiEvent event_queue[TGUI_EVENT_QUEUE_MAX];
     u32 event_queue_count;
-    TGuiDrawCommand draw_command_buffer[TGUI_DRAW_COMMANDS_MAX];
-    u32 draw_command_buffer_count;
+    TGuiDrawCommandBufferStack draw_command_buffer;
     
     i32 mouse_x;
     i32 mouse_y;
@@ -171,6 +179,7 @@ TGUI_API void tgui_update(void);
 TGUI_API void tgui_draw_command_buffer(void);
 TGUI_API void tgui_push_event(TGuiEvent event);
 TGUI_API void tgui_push_draw_command(TGuiDrawCommand draw_command);
+TGUI_API b32 tgui_pull_draw_command(TGuiDrawCommand *draw_cmd);
 // NOTE tgui widgets
 TGUI_API b32 tgui_button(void *id, char *text, i32 x, i32 y);
 TGUI_API void tgui_label(void *id, char *text, i32 x, i32 y);

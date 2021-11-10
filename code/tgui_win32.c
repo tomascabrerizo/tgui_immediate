@@ -190,8 +190,9 @@ int main(int argc, char** argv)
         tgui_draw_bitmap(&tgui_backbuffer, &test_bitmap, tgui_backbuffer.width - test_bitmap.width, 0, test_bitmap.width, test_bitmap.height);
         
         i32 window = 0;
-        TGuiWindowDescriptor window_descriptor;
-        window_descriptor.dim = (TGuiRect){100, 100, 250, 300};
+        TGuiWindowDescriptor window_descriptor = {0};
+        window_descriptor.x = 20;
+        window_descriptor.y = 100;
         window_descriptor.margin = 20;
         
         tgui_begin_window(&window, &window_descriptor);
@@ -212,17 +213,24 @@ int main(int argc, char** argv)
         {
             button = 4;
         }
+        if(tgui_button((void *)5, "test_button_5", 0, 0))
+        {
+            button = 5;
+        }
         tgui_end_window(&window);
         
         char button_text[64];
         sprintf(button_text, "button %d pressed!", button);
-        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 370, 100, button_text); 
+        tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, tgui_backbuffer.height - font_height*2, button_text); 
         
         tgui_draw_command_buffer();
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);
     }
+    
+    tgui_debug_free_bmp(&test_bitmap);
+    tgui_debug_free_bmp(&dog_bitmap);
 
     return 0;
 }

@@ -62,7 +62,7 @@ void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font)
     state->font_height = 9;
     
     state->event_queue_count = 0;
-    state->draw_command_buffer_count = 0;
+    state->draw_command_buffer.top = 0;
 }
 
 void tgui_push_event(TGuiEvent event)
@@ -77,10 +77,23 @@ void tgui_push_event(TGuiEvent event)
 void tgui_push_draw_command(TGuiDrawCommand draw_command)
 {
     TGuiState *state = &tgui_global_state;
-    if(state->draw_command_buffer_count < TGUI_DRAW_COMMANDS_MAX)
+    if(state->draw_command_buffer.top < TGUI_DRAW_COMMANDS_MAX)
     {
-        state->draw_command_buffer[state->draw_command_buffer_count++] = draw_command;
+        state->draw_command_buffer.buffer[state->draw_command_buffer.top++] = draw_command;
     }
+}
+
+b32 tgui_pull_draw_command(TGuiDrawCommand *draw_cmd)
+{
+    TGuiState *state = &tgui_global_state;
+    i32 current_top = (i32)state->draw_command_buffer.top - 1;
+    if(current_top < 0)
+    {
+        return false;
+    }
+    *draw_cmd = state->draw_command_buffer.buffer[current_top];
+    --state->draw_command_buffer.top;
+    return true;
 }
 
 b32 tgui_button(void *id, char *text, i32 x, i32 y)
@@ -94,11 +107,18 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
     u32 v_padding = 30;
     TGuiRect rect = {x, y, text_width + h_padding, text_height + v_padding};
     
+    // TODO: this code seems to be the window layout code
+    // TODO: create a function to set the differents layous
     if(state->parent_window)
     {
         rect.x = state->window_descriptor->next_x;
         rect.y = state->window_descriptor->next_y;
         tgui_compute_next_widget_pos(state->window_descriptor, rect.height);
+        if(state->window_descriptor->current_width < (rect.width + state->window_descriptor->margin*2))
+        {
+            state->window_descriptor->current_width = (rect.width + state->window_descriptor->margin*2);
+        }
+        state->window_descriptor->current_height += rect.height + state->window_descriptor->margin;
     }
 
     b32 result = false;
@@ -135,12 +155,6 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
     if(tgui_is_hot(id)) color = TGUI_GREY;
     if(tgui_is_active(id)) color = TGUI_GREEN;
     if(result) color = TGUI_RED;
-    
-    TGuiDrawCommand rect_command = {0};
-    rect_command.type = TGUI_DRAWCMD_RECT;
-    rect_command.descriptor = rect;
-    rect_command.color = color;
-    tgui_push_draw_command(rect_command);
 
     TGuiDrawCommand text_command = {0};
     text_command.type = TGUI_DRAWCMD_TEXT;
@@ -150,6 +164,12 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
     text_command.descriptor.height = state->font_height;
     text_command.text = text;
     tgui_push_draw_command(text_command);
+    
+    TGuiDrawCommand rect_command = {0};
+    rect_command.type = TGUI_DRAWCMD_RECT;
+    rect_command.descriptor = rect;
+    rect_command.color = color;
+    tgui_push_draw_command(rect_command);
     
     return result;
 }
@@ -178,22 +198,28 @@ void tgui_begin_window(void *id, TGuiWindowDescriptor *window_descriptor)
 
     state->parent_window = id;
     
-    window_descriptor->next_x = window_descriptor->dim.x + window_descriptor->margin;
-    window_descriptor->next_y = window_descriptor->dim.y;
+    window_descriptor->next_x = window_descriptor->x + window_descriptor->margin;
+    window_descriptor->next_y = window_descriptor->y;
     tgui_compute_next_widget_pos(window_descriptor, 0);
     state->window_descriptor = window_descriptor;
-
-    TGuiDrawCommand rect_command = {0};
-    rect_command.type = TGUI_DRAWCMD_RECT;
-    rect_command.descriptor = window_descriptor->dim;
-    rect_command.color = TGUI_BLACK;
-    tgui_push_draw_command(rect_command);
 }
 
 void tgui_end_window(void *id)
 {
     UNUSED_VAR(id);
     TGuiState *state = &tgui_global_state;
+     
+    TGuiRect window_descriptor;
+    window_descriptor.x = state->window_descriptor->x;
+    window_descriptor.y = state->window_descriptor->y;
+    window_descriptor.width = state->window_descriptor->current_width;
+    window_descriptor.height = state->window_descriptor->current_height + state->window_descriptor->margin;
+
+    TGuiDrawCommand rect_command = {0};
+    rect_command.type = TGUI_DRAWCMD_RECT;
+    rect_command.descriptor = window_descriptor;
+    rect_command.color = TGUI_BLACK;
+    tgui_push_draw_command(rect_command);
 
     state->parent_window = 0;
     state->window_descriptor = 0;
@@ -246,10 +272,10 @@ void tgui_draw_command_buffer(void)
 {
     TGuiState *state = &tgui_global_state;
     // NOTE: pull tgui draw commands from the buffer 
-    for(u32 cmd_index = 0; cmd_index < state->draw_command_buffer_count; ++cmd_index)
+    TGuiDrawCommand draw_cmd;
+    while(tgui_pull_draw_command(&draw_cmd))
     {
-        TGuiDrawCommand *draw_cmd = state->draw_command_buffer + cmd_index;
-        switch(draw_cmd->type)
+        switch(draw_cmd.type)
         {
             case TGUI_DRAWCMD_CLEAR:
             {
@@ -257,17 +283,17 @@ void tgui_draw_command_buffer(void)
             } break;
             case TGUI_DRAWCMD_RECT:
             {
-                i32 max_x = draw_cmd->descriptor.x + draw_cmd->descriptor.width;
-                i32 max_y = draw_cmd->descriptor.y + draw_cmd->descriptor.height;
-                tgui_draw_rect(state->backbuffer, draw_cmd->descriptor.x, draw_cmd->descriptor.y, max_x, max_y, draw_cmd->color);
+                i32 max_x = draw_cmd.descriptor.x + draw_cmd.descriptor.width;
+                i32 max_y = draw_cmd.descriptor.y + draw_cmd.descriptor.height;
+                tgui_draw_rect(state->backbuffer, draw_cmd.descriptor.x, draw_cmd.descriptor.y, max_x, max_y, draw_cmd.color);
             } break;
             case TGUI_DRAWCMD_BITMAP:
             {
-                tgui_draw_bitmap(state->backbuffer, draw_cmd->bitmap, draw_cmd->descriptor.x, draw_cmd->descriptor.y, draw_cmd->descriptor.width, draw_cmd->descriptor.height);
+                tgui_draw_bitmap(state->backbuffer, draw_cmd.bitmap, draw_cmd.descriptor.x, draw_cmd.descriptor.y, draw_cmd.descriptor.width, draw_cmd.descriptor.height);
             } break;
             case TGUI_DRAWCMD_TEXT:
             {
-                tgui_draw_text(state->backbuffer, state->font, state->font_height, draw_cmd->descriptor.x, draw_cmd->descriptor.y, draw_cmd->text);
+                tgui_draw_text(state->backbuffer, state->font, state->font_height, draw_cmd.descriptor.x, draw_cmd.descriptor.y, draw_cmd.text);
             } break;
             default:
             {
@@ -275,7 +301,6 @@ void tgui_draw_command_buffer(void)
             } break;
         }
     }
-    state->draw_command_buffer_count = 0;
 }
 
 // NOTE: DEBUG functions
