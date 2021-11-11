@@ -69,21 +69,11 @@ b32 tgui_is_active(void *id)
 void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font)
 {
     TGuiState *state = &tgui_global_state;
-    state->backbuffer = backbuffer;
     
+    memset(state, 0, sizeof(TGuiState));
+    state->backbuffer = backbuffer;
     state->font = font;
     state->font_height = 9;
-    
-    state->event_queue_count = 0;
-    state->draw_command_buffer.top = 0;
-
-    state->mouse_x = 0;
-    state->mouse_y = 0;
-    state->last_mouse_x = 0;
-    state->last_mouse_y = 0;
-    state->mouse_up = false;
-    state->mouse_down = false;
-    state->mouse_is_down = false;
 }
 
 void tgui_push_event(TGuiEvent event)
@@ -95,12 +85,12 @@ void tgui_push_event(TGuiEvent event)
     }
 }
 
-void tgui_push_draw_command(TGuiDrawCommand draw_command)
+void tgui_push_draw_command(TGuiDrawCommand draw_cmd)
 {
     TGuiState *state = &tgui_global_state;
     if(state->draw_command_buffer.top < TGUI_DRAW_COMMANDS_MAX)
     {
-        state->draw_command_buffer.buffer[state->draw_command_buffer.top++] = draw_command;
+        state->draw_command_buffer.buffer[state->draw_command_buffer.top++] = draw_cmd;
     }
 }
 
@@ -167,8 +157,7 @@ b32 tgui_button(void *id, char *text, i32 x, i32 y)
             tgui_set_hot(0);
         }
     }
-    //if((is_over && !state->parent_window) || (is_over && !tgui_is_active(state->parent_window)))
-    if(is_over)
+    if((is_over && !state->parent_window) || (is_over && !tgui_is_active(state->parent_window)))
     {
         tgui_set_hot(id);
     }
@@ -326,6 +315,10 @@ void tgui_update(void)
         }
     }
     state->event_queue_count = 0;
+
+    // NOTE: test stuff
+    state->widget_node_buffer.count = 0;
+    state->unique_id = 0;
 }
 
 void tgui_draw_command_buffer(void)
@@ -363,6 +356,51 @@ void tgui_draw_command_buffer(void)
     }
 }
 
+//------------------------------------------------------------------------
+
+TGuiWidgetNode *tgui_get_widget_node()
+{
+    TGuiState *state = &tgui_global_state;
+    ASSERT((state->widget_node_buffer.count + 1) < TGUI_WIDGET_NODES_MAX);
+    TGuiWidgetNode *result = &state->widget_node_buffer.data[state->widget_node_buffer.count++];
+    return result;
+}
+
+void tgui_test_begin_window(TGuiWindowDescriptor *window_descriptor)
+{
+    UNUSED_VAR(window_descriptor);
+    TGuiState *state = &tgui_global_state;
+    if(!state->widget_parent_node)
+    {
+        state->widget_parent_node = tgui_get_widget_node();
+    }
+    TGuiWidgetNode *sibling_prev = 0;
+    while(state->widget_parent_node)
+    {
+        sibling_prev = state->widget_parent_node;
+        state->widget_parent_node = state->widget_parent_node->sibling_next;
+    }
+    state->widget_parent_node = tgui_get_widget_node();
+    state->widget_parent_node->sibling_prev = sibling_prev;
+    
+    state->widget_parent_node->parent = 0;
+}
+
+void tgui_test_end_window()
+{
+    TGuiState *state = &tgui_global_state;
+    UNUSED_VAR(state);
+}
+
+b32 tgui_test_button(char *text)
+{
+    TGuiState *state = &tgui_global_state;
+    UNUSED_VAR(state);
+    UNUSED_VAR(text);
+    return false;
+}
+
+//------------------------------------------------------------------------
 // NOTE: DEBUG functions
 
 // NOTE: only use in implementation

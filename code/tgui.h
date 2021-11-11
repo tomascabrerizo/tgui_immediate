@@ -131,6 +131,34 @@ typedef struct TGuiWindowDescriptor
     i32 next_y;
 } TGuiWindowDescriptor;
 
+//------------------------------------------------------------------------
+// NOTE: try to represent a gui with a tree
+typedef struct TGuiWidgetNode
+{
+    struct TGuiWidgetNode *parent;
+    struct TGuiWidgetNode *child_first;
+    struct TGuiWidgetNode *child_last;
+    struct TGuiWidgetNode *sibling_next;
+    struct TGuiWidgetNode *sibling_prev;
+
+    u32 unique_id;
+
+} TGuiWidgetNode;
+
+#define TGUI_WIDGET_NODES_MAX 128
+typedef struct TGuiWidgetNodeBuffer
+{
+    TGuiWidgetNode data[TGUI_WIDGET_NODES_MAX];
+    u32 count;
+} TGuiWidgetNodeBuffer;
+TGuiWidgetNode *tgui_get_widget_node();
+
+void tgui_test_begin_window(TGuiWindowDescriptor *window_descriptor);
+void tgui_test_end_window();
+b32 tgui_test_button(char *text);
+
+//------------------------------------------------------------------------
+
 // TODO: make container structs for this queues, like std::vector<> in c++
 #define TGUI_DRAW_COMMANDS_MAX 128
 typedef struct TGuiDrawCommandBufferStack
@@ -163,6 +191,12 @@ typedef struct TGuiState
 
     TGuiWindowDescriptor *window_descriptor;
     void *parent_window;
+
+    // NOTE: test stuff
+    TGuiWidgetNode *widget_parent_node;
+    TGuiWidgetNodeBuffer widget_node_buffer;
+    u32 unique_id;
+
 } TGuiState;
 
 // TODO: Maybe the state should be provided by the application?
@@ -184,7 +218,7 @@ TGUI_API void tgui_init(TGuiBackbuffer *backbuffer, TGuiFont *font);
 TGUI_API void tgui_update(void);
 TGUI_API void tgui_draw_command_buffer(void);
 TGUI_API void tgui_push_event(TGuiEvent event);
-TGUI_API void tgui_push_draw_command(TGuiDrawCommand draw_command);
+TGUI_API void tgui_push_draw_command(TGuiDrawCommand draw_cmd);
 TGUI_API b32 tgui_pull_draw_command(TGuiDrawCommand *draw_cmd);
 // NOTE tgui widgets
 TGUI_API b32 tgui_button(void *id, char *text, i32 x, i32 y);
