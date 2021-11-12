@@ -246,6 +246,32 @@ int main(int argc, char** argv)
         tgui_draw_text(&tgui_backbuffer, &test_font, font_height, 0, tgui_backbuffer.height - font_height*2, button_text); 
         
         tgui_draw_command_buffer();
+        
+        //----------------------------------------------------------------
+        // NOTE: tree of widgets build test
+        tgui_test_begin_widget();
+            
+            tgui_test_begin_widget();
+                tgui_test_begin_widget();
+                tgui_test_end_widget();
+            tgui_test_end_widget();
+            
+            tgui_test_begin_widget();
+                //tgui_test_begin_widget();
+                //tgui_test_end_widget();
+            tgui_test_end_widget();
+            
+        
+        tgui_test_end_widget();
+    
+        TGuiWidgetNode *root = tgui_global_state.root_widget;
+        u32 break_here = 0;
+        UNUSED_VAR(break_here);
+        tgui_recursive_descent_tree(root, 400, 50);
+        
+        // NOTE: tree of widgets draw for debuging
+        
+        //----------------------------------------------------------------
 
         // NOTE: Blt the backbuffer on to the destination window
         BitBlt(global_device_context, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, global_backbuffer_dc, 0, 0, SRCCOPY);

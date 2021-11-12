@@ -317,6 +317,7 @@ void tgui_update(void)
     state->event_queue_count = 0;
 
     // NOTE: test stuff
+    state->root_widget = 0;
     state->widget_node_buffer.count = 0;
     state->unique_id = 0;
 }
@@ -363,41 +364,82 @@ TGuiWidgetNode *tgui_get_widget_node()
     TGuiState *state = &tgui_global_state;
     ASSERT((state->widget_node_buffer.count + 1) < TGUI_WIDGET_NODES_MAX);
     TGuiWidgetNode *result = &state->widget_node_buffer.data[state->widget_node_buffer.count++];
+    // NOTE: the allocator must give a valid widget
+    result->parent = 0;
+    result->child_first = 0;
+    result->child_last = 0;
+    result->sibling_next = 0;
+    result->sibling_prev = 0;
+    result->unique_id = state->widget_node_buffer.count;
     return result;
 }
 
-void tgui_test_begin_window(TGuiWindowDescriptor *window_descriptor)
+static void tgui_set_root_widget(TGuiWidgetNode *widget)
 {
-    UNUSED_VAR(window_descriptor);
     TGuiState *state = &tgui_global_state;
-    if(!state->widget_parent_node)
+    state->root_widget = widget;
+}
+
+static TGuiWidgetNode *tgui_get_root_widget(void)
+{
+    TGuiState *state = &tgui_global_state;
+    TGuiWidgetNode *result = state->root_widget;
+    return result;
+}
+
+void tgui_test_begin_widget(void)
+{
+    TGuiWidgetNode *root_widget_node = tgui_get_root_widget();
+    TGuiWidgetNode *new_widget_node = tgui_get_widget_node();
+    if(!root_widget_node)
     {
-        state->widget_parent_node = tgui_get_widget_node();
+        tgui_set_root_widget(new_widget_node);
     }
-    TGuiWidgetNode *sibling_prev = 0;
-    while(state->widget_parent_node)
+    else
     {
-        sibling_prev = state->widget_parent_node;
-        state->widget_parent_node = state->widget_parent_node->sibling_next;
+        new_widget_node->sibling_next = root_widget_node->child_first;
+        if(root_widget_node->child_first)
+        {
+            root_widget_node->child_first->sibling_prev = new_widget_node;
+        }
+        else
+        {
+            root_widget_node->child_last = new_widget_node;
+        }
+        root_widget_node->child_first = new_widget_node;
+        new_widget_node->parent = root_widget_node; 
+        tgui_set_root_widget(new_widget_node);
     }
-    state->widget_parent_node = tgui_get_widget_node();
-    state->widget_parent_node->sibling_prev = sibling_prev;
+}
+
+void tgui_test_end_widget(void)
+{
+    TGuiWidgetNode *root_widget_node = tgui_get_root_widget();
+    if(root_widget_node->parent)
+    {
+        tgui_set_root_widget(root_widget_node->parent);
+    }
+}
+
+static void tgui_recursive_descent_tree(TGuiWidgetNode *root, i32 x, i32 y)
+{
+    TGuiState *state = &tgui_global_state;
     
-    state->widget_parent_node->parent = 0;
-}
-
-void tgui_test_end_window()
-{
-    TGuiState *state = &tgui_global_state;
-    UNUSED_VAR(state);
-}
-
-b32 tgui_test_button(char *text)
-{
-    TGuiState *state = &tgui_global_state;
-    UNUSED_VAR(state);
-    UNUSED_VAR(text);
-    return false;
+    i32 rect_dim = 20;
+    while(root)
+    {
+        i32 min_x = x;
+        i32 max_x = min_x + rect_dim;
+        i32 min_y = y;
+        i32 max_y = min_y + rect_dim;
+        tgui_draw_rect(state->backbuffer, min_x, min_y, max_x, max_y, TGUI_ORANGE);
+        
+        TGuiWidgetNode *child = root->child_first;
+        tgui_recursive_descent_tree(child, x, y + 30);
+        root = root->sibling_next;
+    
+        x += 30;
+    }
 }
 
 //------------------------------------------------------------------------

@@ -153,9 +153,8 @@ typedef struct TGuiWidgetNodeBuffer
 } TGuiWidgetNodeBuffer;
 TGuiWidgetNode *tgui_get_widget_node();
 
-void tgui_test_begin_window(TGuiWindowDescriptor *window_descriptor);
-void tgui_test_end_window();
-b32 tgui_test_button(char *text);
+void tgui_test_begin_widget(void);
+void tgui_test_end_widget(void);
 
 //------------------------------------------------------------------------
 
@@ -193,7 +192,7 @@ typedef struct TGuiState
     void *parent_window;
 
     // NOTE: test stuff
-    TGuiWidgetNode *widget_parent_node;
+    TGuiWidgetNode *root_widget;
     TGuiWidgetNodeBuffer widget_node_buffer;
     u32 unique_id;
 
