@@ -387,7 +387,7 @@ static TGuiWidgetNode *tgui_get_root_widget(void)
     return result;
 }
 
-void tgui_test_begin_widget(void)
+void tgui_begin_widget(void)
 {
     TGuiWidgetNode *root_widget_node = tgui_get_root_widget();
     TGuiWidgetNode *new_widget_node = tgui_get_widget_node();
@@ -412,7 +412,7 @@ void tgui_test_begin_widget(void)
     }
 }
 
-void tgui_test_end_widget(void)
+void tgui_end_widget(void)
 {
     TGuiWidgetNode *root_widget_node = tgui_get_root_widget();
     if(root_widget_node->parent)

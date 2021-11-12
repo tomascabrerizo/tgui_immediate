@@ -153,8 +153,8 @@ typedef struct TGuiWidgetNodeBuffer
 } TGuiWidgetNodeBuffer;
 TGuiWidgetNode *tgui_get_widget_node();
 
-void tgui_test_begin_widget(void);
-void tgui_test_end_widget(void);
+void tgui_begin_widget(void);
+void tgui_end_widget(void);
 
 //------------------------------------------------------------------------
 

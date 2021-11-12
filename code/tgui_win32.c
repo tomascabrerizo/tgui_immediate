@@ -249,20 +249,23 @@ int main(int argc, char** argv)
         
         //----------------------------------------------------------------
         // NOTE: tree of widgets build test
-        tgui_test_begin_widget();
+        tgui_begin_widget();
             
-            tgui_test_begin_widget();
-                tgui_test_begin_widget();
-                tgui_test_end_widget();
-            tgui_test_end_widget();
+            tgui_begin_widget();
+                tgui_begin_widget();
+                    tgui_begin_widget();
+                    tgui_end_widget();
+                    tgui_begin_widget();
+                    tgui_end_widget();
+                tgui_end_widget();
+            tgui_end_widget();
             
-            tgui_test_begin_widget();
-                //tgui_test_begin_widget();
-                //tgui_test_end_widget();
-            tgui_test_end_widget();
+            tgui_begin_widget();
+                tgui_begin_widget();
+                tgui_end_widget();
+            tgui_end_widget();
             
-        
-        tgui_test_end_widget();
+        tgui_end_widget();
     
         TGuiWidgetNode *root = tgui_global_state.root_widget;
         u32 break_here = 0;
